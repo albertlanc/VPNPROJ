@@ -1,0 +1,5 @@
+[credential]
+	helper = store
+[user]
+	email = albertlanc@github.com
+	name = albertlanc

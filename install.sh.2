@@ -1,0 +1,80 @@
+#!/bin/bash
+# install.sh - Master VPN Installer
+
+# Ensure script is run as root
+if [ "${EUID}" -ne 0 ]; then
+    echo "[!] This script must be run as root."
+    exit 1
+fi
+
+# ==========================================
+# CHANGE THIS TO YOUR ACTUAL GITHUB REPO URL
+# ==========================================
+REPO_URL="https://raw.githubusercontent.com/YourUsername/YourRepoName/main"
+
+clear
+echo "=================================================="
+echo "       STARTING MODULAR VPN INSTALLATION          "
+echo "=================================================="
+
+# 1. Update System & Install Dependencies
+echo "[1/6] Installing Core Dependencies..."
+apt update -y
+apt install -y wget curl unzip jq nginx iptables python3
+
+# 2. Setup SSH-WebSocket Proxy
+echo "[2/6] Configuring SSH-WS Bridge..."
+wget -q -O /usr/local/bin/ssh-ws.py "$REPO_URL/core/ssh-ws.py"
+chmod +x /usr/local/bin/ssh-ws.py
+
+# Create the systemd service for SSH-WS dynamically
+cat <<EOF > /etc/systemd/system/ssh-ws.service
+[Unit]
+Description=SSH WebSocket Proxy Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /usr/local/bin/ssh-ws.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable ssh-ws
+systemctl restart ssh-ws
+
+# 3. Install Xray Core (Calls your modular script)
+echo "[3/6] Installing Xray Core (VMess/VLESS)..."
+bash -c "$(curl -sSL $REPO_URL/core/xray-install.sh)"
+
+# 4. Install SlowDNS (Calls your modular script)
+echo "[4/6] Installing SlowDNS (DNSTT)..."
+bash -c "$(curl -sSL $REPO_URL/core/slowdns-install.sh)"
+
+# 5. Configure Nginx Reverse Proxy
+echo "[5/6] Routing Web Traffic (Nginx)..."
+wget -q -O /etc/nginx/nginx.conf "$REPO_URL/templates/nginx.conf"
+systemctl restart nginx
+
+# 6. Install CLI Menu & User Scripts
+echo "[6/6] Installing User Management Interface..."
+wget -q -O /usr/local/sbin/menu "$REPO_URL/menu/menu.sh"
+wget -q -O /usr/local/sbin/add-user "$REPO_URL/menu/add-user.sh"
+wget -q -O /usr/local/sbin/del-user "$REPO_URL/menu/del-user.sh"
+
+chmod +x /usr/local/sbin/menu
+chmod +x /usr/local/sbin/add-user
+chmod +x /usr/local/sbin/del-user
+
+clear
+echo "=================================================="
+echo "          INSTALLATION COMPLETE!                  "
+echo "=================================================="
+echo " All services are configured and running."
+echo " Type 'menu' in your terminal to start."
+echo "=================================================="

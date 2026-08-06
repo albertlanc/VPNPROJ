@@ -1,0 +1,30 @@
+
+get_license_days() {
+    local authorized_url="https://raw.githubusercontent.com/albertlanc/VPNPROJ/main/licensed-ips.txt"
+    local server_ip=$(curl -sS ipv4.icanhazip.com 2>/dev/null || hostname -I | awk '{print $1}')
+    local license_data=$(curl -s "$authorized_url")
+    local matched_line=$(echo "$license_data" | grep "^$server_ip:")
+
+    if [ -z "$matched_line" ]; then
+        echo "Unlicensed"
+        return
+    fi
+
+    local exp_date=$(echo "$matched_line" | cut -d':' -f2)
+    local current_epoch=$(date +%s)
+    local exp_epoch=$(date -d "$exp_date" +%s 2>/dev/null || date -jf "%Y-%m-%d" "$exp_date" +%s 2>/dev/null)
+
+    if [ -z "$exp_epoch" ]; then
+        echo "Active"
+        return
+    fi
+
+    local diff=$((exp_epoch - current_epoch))
+    local days=$((diff / 86400))
+
+    if [ $days -lt 0 ]; then
+        echo "Expired"
+    else
+        echo "$days Days Remaining ($exp_date)"
+    fi
+}

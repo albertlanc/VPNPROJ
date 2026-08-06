@@ -1,5 +1,5 @@
 #!/bin/bash
-# install.sh - Master VPN Installer with TTY Input Fix
+# install.sh - Master VPN Installer with Certbot SSL & TTY Input
 
 if [ "${EUID}" -ne 0 ]; then
     echo "[!] This script must be run as root."
@@ -14,6 +14,7 @@ echo "       VPN DOMAIN & NETWORK SETUP                 "
 echo "=================================================="
 read -p "Enter your Subdomain (e.g., vpn.yourdomain.com): " DOMAIN < /dev/tty
 read -p "Enter your SlowDNS Nameserver (e.g., ns.yourdomain.com): " NS_DOMAIN < /dev/tty
+read -p "Enter your Email for SSL notifications: " EMAIL < /dev/tty
 echo "=================================================="
 
 clear
@@ -21,10 +22,10 @@ echo "=================================================="
 echo "       STARTING MODULAR VPN INSTALLATION          "
 echo "=================================================="
 
-# 1. Update System & Install Dependencies
-echo "[1/6] Installing Core Dependencies..."
+# 1. Update System & Install Dependencies (including Certbot)
+echo "[1/6] Installing Core Dependencies & Certbot..."
 apt update -y
-apt install -y wget curl unzip jq nginx iptables python3
+apt install -y wget curl unzip jq nginx iptables python3 certbot python3-certbot-nginx
 
 # 2. Setup SSH-WebSocket Proxy
 echo "[2/6] Configuring SSH-WS Bridge..."
@@ -74,12 +75,19 @@ if [ -f /etc/systemd/system/slowdns.service ]; then
     systemctl restart slowdns
 fi
 
-# 5. Configure Nginx Reverse Proxy
-echo "[5/6] Routing Web Traffic (Nginx)..."
+# 5. Configure Nginx Reverse Proxy & Generate SSL
+echo "[5/6] Routing Web Traffic & Generating SSL Certificate..."
 if curl --output /dev/null --silent --head --fail "$REPO_URL/Templates/nginx.conf"; then
     wget -q -O "/etc/nginx/nginx.conf" "$REPO_URL/Templates/nginx.conf"
     sed -i "s/server_name _;/server_name $DOMAIN;/g" /etc/nginx/nginx.conf
     systemctl restart nginx
+
+    # Automatic Let's Encrypt SSL generation
+    if [ -n "$EMAIL" ]; then
+        certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$EMAIL" || certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email
+    else
+        certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email
+    fi
 fi
 
 # 6. Install CLI Menu & User Scripts
@@ -100,6 +108,7 @@ echo "          INSTALLATION COMPLETE!                  "
 echo "=================================================="
 echo " Subdomain  : $DOMAIN"
 echo " Nameserver : $NS_DOMAIN"
+echo " SSL Status : Secured via Let's Encrypt"
 echo "=================================================="
 echo " All services are configured and running."
 echo " Type 'menu' in your terminal to start."

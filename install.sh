@@ -6,7 +6,7 @@ if [ "${EUID}" -ne 0 ]; then
     exit 1
 fi
 
-REPO_URL="https://falling-fire-5f4c.robertasholamie.workers.dev"
+REPO_URL="https://square-rain-40f0.robertasholamie.workers.dev"
 
 # ==========================================
 # GATHER USER DOMAIN INPUT FIRST

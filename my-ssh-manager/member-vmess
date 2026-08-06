@@ -1,0 +1,22 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'; RED='\e[0;31m'
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "          ${YELLOW}VMESS USER LIST${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-15s %-15s %s${NC}\n" "USERNAME" "EXP DATE" "STATUS"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+if [ -f /etc/xray/vmess-users.db ]; then
+    while read -r u uuid exp; do
+        exp_sec=$(date -d "$exp" +%s 2>/dev/null || echo 0)
+        now_sec=$(date +%s)
+        if [[ $now_sec -ge $exp_sec ]]; then
+            status="${RED}Expired${NC}"
+        else
+            status="${GREEN}Active${NC}"
+        fi
+        printf "${GREEN}%-15s %-15s %b\n" "$u" "$exp" "$status"
+    done < /etc/xray/vmess-users.db
+fi
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to return...${NC}"; read -n 1 -s -r

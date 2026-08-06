@@ -1,0 +1,59 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "       ${YELLOW}CREATE VMESS ACCOUNT${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Username       : ${GREEN}"; read user
+echo -ne "${CYAN}Expired (Days) : ${GREEN}"; read masaaktif
+
+uuid=$(cat /proc/sys/kernel/random/uuid)
+exp_sys=$(date -d "$masaaktif days" +"%Y-%m-%d")
+exp_fmt=$(date -d "$masaaktif days" +"%b %d, %Y")
+
+# Save to tracking database
+echo -e "${user} ${uuid} ${exp_sys}" >> /etc/xray/vmess-users.db
+
+IP=$(curl -sS ipv4.icanhazip.com)
+if [ -f /etc/xray/domain ]; then DOMAIN=$(cat /etc/xray/domain); else DOMAIN=$IP; fi
+
+# Generate VMess JSONs and Base64 Links
+cat > /tmp/vmess_tls.json <<_EOF_
+{"v":"2","ps":"${user}","add":"${DOMAIN}","port":"443","id":"${uuid}","aid":"0","net":"ws","path":"/vmess","type":"none","host":"${DOMAIN}","tls":"tls"}
+_EOF_
+vmess_tls="vmess://$(base64 -w 0 /tmp/vmess_tls.json)"
+
+cat > /tmp/vmess_http.json <<_EOF_
+{"v":"2","ps":"${user}","add":"${DOMAIN}","port":"443","id":"${uuid}","aid":"0","net":"ws","path":"/vmess-upgrade","type":"none","host":"[ISP_BUG_HOST]","tls":"tls"}
+_EOF_
+vmess_http="vmess://$(base64 -w 0 /tmp/vmess_http.json)"
+
+cat > /tmp/vmess_nontls.json <<_EOF_
+{"v":"2","ps":"${user}","add":"${DOMAIN}","port":"80","id":"${uuid}","aid":"0","net":"ws","path":"/vmess","type":"none","host":"${DOMAIN}","tls":"none"}
+_EOF_
+vmess_nontls="vmess://$(base64 -w 0 /tmp/vmess_nontls.json)"
+rm -f /tmp/vmess_tls.json /tmp/vmess_http.json /tmp/vmess_nontls.json
+
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e ""
+echo -e "${YELLOW}        VMESS ACCOUNT CREATED${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Remarks" "$user"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Domain" "$DOMAIN"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "User ID" "$uuid"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Expired On" "$exp_fmt"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK TLS (Cloudflare/Standard) :${NC}"
+echo -e "${GREEN}${vmess_tls}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK HTTP-UPGRADE (CloudFront Bypass) :${NC}"
+echo -e "${GREEN}${vmess_http}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK NO-TLS (Port 80) :${NC}"
+echo -e "${GREEN}${vmess_nontls}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

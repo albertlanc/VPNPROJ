@@ -1,0 +1,38 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[1;33m'; BLUE='\e[0;34m'
+clear
+echo -ne "${CYAN}Username : ${GREEN}"; read user
+echo -ne "${CYAN}Minutes  : ${GREEN}"; read mins
+uuid=$(cat /proc/sys/kernel/random/uuid)
+exp_sys=$(date -d "tomorrow" +"%Y-%m-%d")
+exp_time=$(date -u -d "+$mins minutes" +"%H:%M UTC")
+
+echo -e "${user} ${uuid} ${exp_sys}" >> /etc/xray/vmess-users.db
+DOMAIN=$(cat /etc/xray/domain 2>/dev/null || curl -sS ipv4.icanhazip.com)
+
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "       ${YELLOW}PREMIUM TIMED VMESS ACCOUNT${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Remarks" "$user"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Domain" "$DOMAIN"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "User ID" "$uuid"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Valid For" "$mins Minutes"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Expires At" "$exp_time"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+echo '{"v":"2","ps":"'$user'","add":"'$DOMAIN'","port":"443","id":"'$uuid'","aid":"0","net":"ws","path":"/vmess","type":"none","host":"'$DOMAIN'","tls":"tls"}' > /tmp/vt.json
+echo '{"v":"2","ps":"'$user'","add":"'$DOMAIN'","port":"443","id":"'$uuid'","aid":"0","net":"ws","path":"/vmess-upgrade","type":"none","host":"[ISP_BUG_HOST]","tls":"tls"}' > /tmp/vh.json
+echo '{"v":"2","ps":"'$user'","add":"'$DOMAIN'","port":"80","id":"'$uuid'","aid":"0","net":"ws","path":"/vmess","type":"none","host":"'$DOMAIN'","tls":"none"}' > /tmp/vn.json
+
+echo -e "${YELLOW}LINK TLS (Cloudflare/Standard) :${NC}\n${GREEN}vmess://$(base64 -w 0 /tmp/vt.json)${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK HTTP-UPGRADE (CloudFront Bypass) :${NC}\n${GREEN}vmess://$(base64 -w 0 /tmp/vh.json)${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK NO-TLS (Port 80) :${NC}\n${GREEN}vmess://$(base64 -w 0 /tmp/vn.json)${NC}"
+rm -f /tmp/vt.json /tmp/vh.json /tmp/vn.json
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "⚠️  ${YELLOW}ACCOUNT WILL SELF-DESTRUCT IN $mins MINUTES.${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

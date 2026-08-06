@@ -1,0 +1,35 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'; RED='\e[1;31m'
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "       ${YELLOW}CLEAN EXPIRED VMESS USERS${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+DB="/etc/xray/vmess-users.db"
+TEMP_DB="/etc/xray/vmess-users.tmp"
+now_sec=$(date +%s)
+cleaned=0
+
+if [ -f "$DB" ]; then
+    > "$TEMP_DB"
+    while read -r user uuid exp; do
+        if [[ -z "$user" ]]; then continue; fi
+        exp_sec=$(date -d "$exp" +%s 2>/dev/null || echo 0)
+        if [[ $now_sec -ge $exp_sec && $exp_sec -ne 0 ]]; then
+            echo -e "${RED}[EXPIRED & REMOVED]${NC} User: $user (Expired on: $exp)"
+            ((cleaned++))
+        else
+            echo "$user $uuid $exp" >> "$TEMP_DB"
+        fi
+    done < "$DB"
+    mv "$TEMP_DB" "$DB"
+fi
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+if [ $cleaned -eq 0 ]; then
+    echo -e "${GREEN}No expired VMess users found. All clean!${NC}"
+else
+    echo -e "${GREEN}Successfully removed $cleaned expired user(s).${NC}"
+fi
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

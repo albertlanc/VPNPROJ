@@ -1,0 +1,44 @@
+#!/bin/bash
+# menu/add-xray.sh
+
+IP=$(curl -s ifconfig.me)
+
+echo "========================================"
+echo "          ADD XRAY USER                 "
+echo "========================================"
+read -p "Username : " USER
+read -p "Expiry (Days) : " DAYS
+
+EXP_DATE=$(date -d "+${DAYS} days" +"%Y-%m-%d")
+UUID=$(xray uuid)
+CONFIG="/usr/local/etc/xray/config.json"
+
+jq --arg uuid "$UUID" --arg user "$USER" \
+   '.inbounds[0].settings.clients += [{"id": $uuid, "level": 0, "email": $user}]' \
+   $CONFIG > /tmp/xray_tmp.json && mv /tmp/xray_tmp.json $CONFIG
+
+jq --arg uuid "$UUID" --arg user "$USER" \
+   '.inbounds[1].settings.clients += [{"id": $uuid, "alterId": 0, "email": $user}]' \
+   $CONFIG > /tmp/xray_tmp.json && mv /tmp/xray_tmp.json $CONFIG
+
+systemctl restart xray
+
+VMESS_JSON="{\"v\":\"2\",\"ps\":\"$USER\",\"add\":\"$IP\",\"port\":\"80\",\"id\":\"$UUID\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"$IP\",\"tls\":\"\"}"
+VMESS_BASE64=$(echo -n "$VMESS_JSON" | base64 -w 0)
+
+echo ""
+echo "========================================"
+echo "          XRAY ACCOUNT DETAILS          "
+echo "========================================"
+echo "Username   : $USER"
+echo "Expires On : $EXP_DATE"
+echo "Host / IP  : $IP"
+echo "========================================"
+echo " [ VLESS WS ]"
+echo "vless://${UUID}@${IP}:80?path=/vless&security=none&encryption=none&type=ws#${USER}"
+echo "========================================"
+echo " [ VMESS WS ]"
+echo "vmess://${VMESS_BASE64}"
+echo "========================================"
+read -n 1 -s -r -p "Press any key to return to menu..."
+menu

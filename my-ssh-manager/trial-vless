@@ -1,0 +1,24 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'
+user="TRIAL-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 4 | head -n 1)"
+uuid=$(cat /proc/sys/kernel/random/uuid)
+exp_sys=$(date -d "tomorrow" +"%Y-%m-%d")
+
+echo -e "${user} ${uuid} ${exp_sys}" >> /etc/xray/vless-users.db
+
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "       ${YELLOW}TRIAL ACCOUNT CREATED${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Remarks" "$user"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Domain" "te.gregsmarty.co.uk"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "User ID" "$uuid"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Expired On" "24 Hours (Trial)"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK TLS :${NC}\n${GREEN}vless://${uuid}@${DOMAIN}:443?path=/vless&security=tls&encryption=none&type=ws#${user}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK HTTP-UPGRADE (CloudFront Bypass) :${NC}\n${GREEN}vless://${uuid}@${DOMAIN}:443?path=/vless-upgrade&security=tls&encryption=none&type=ws&sni=[ISP_BUG_HOST]#${user}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK NO-TLS :${NC}\n${GREEN}vless://${uuid}@${DOMAIN}:80?path=/vless&security=none&encryption=none&type=ws#${user}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

@@ -1,0 +1,25 @@
+#!/bin/bash
+B_WHITE='\e[1;37m'
+B_CYAN='\e[1;36m'
+B_GREEN='\e[1;32m'
+B_YELLOW='\e[1;33m'
+NC='\e[0m'
+BORDER="${B_CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+clear
+echo -e "$BORDER"
+echo -e "${B_YELLOW}             CHECK RUNNING SERVICES              ${NC}"
+echo -e "$BORDER"
+
+services=(ssh dropbear nginx xray stunnel4 fail2ban udp-custom)
+for svc in "${services[@]}"; do
+    if systemctl is-active --quiet "$svc" 2>/dev/null; then
+        echo -e " ${B_WHITE}• %-15s : ${B_GREEN}RUNNING${NC}" "$svc"
+    else
+        echo -e " ${B_WHITE}• %-15s : \e[1;31mSTOPPED / INACTIVE${NC}" "$svc"
+    fi
+done
+
+echo -e "$BORDER"
+echo -ne " ${B_WHITE}Press any key to return...${NC}"
+read -n 1 -s -r

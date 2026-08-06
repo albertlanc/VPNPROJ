@@ -1,0 +1,20 @@
+#!/bin/bash
+clear
+echo -e "\e[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\e[0m"
+echo -e "           \e[1;33mRUNNING SERVICES & PROTOCOLS\e[0m"
+echo -e "\e[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\e[0m"
+echo -e "\e[1;32mChecking active system protocols...\e[0m\n"
+
+services=("ssh" "dropbear" "stunnel4" "xray" "nginx" "slowdns" "udp-custom" "hysteria" "openvpn")
+
+for srv in "${services[@]}"; do
+    if systemctl is-active --quiet "$srv" 2>/dev/null; then
+        printf " \e[1;34m> \e[1;32m%-15s : ACTIVE\e[0m\n" "$srv"
+    else
+        printf " \e[1;34m> \e[1;31m%-15s : INACTIVE\e[0m\n" "$srv"
+    fi
+done
+
+echo -e "\e[1;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\e[0m"
+echo -ne "\e[1;32mPress [ ENTER ] to return to menu...\e[0m"
+read -n 1 -s -r

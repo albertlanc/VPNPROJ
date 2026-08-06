@@ -1,0 +1,51 @@
+#!/bin/bash
+NC='\e[0m'
+GREEN='\e[0;32m'
+YELLOW='\e[1;33m'
+BLUE='\e[0;34m'
+RED='\e[1;31m'
+
+clear
+echo -e "${BLUE}======================================${NC}"
+echo -e "${YELLOW}       CHECK ACTIVE USER LOGIN        ${NC}"
+echo -e "${BLUE}======================================${NC}"
+echo -e "${GREEN}Scanning for active SSH & Dropbear connections...${NC}"
+echo -e "${BLUE}======================================${NC}"
+printf "${GREEN}%-15s %-12s %s${NC}\n" "USERNAME" "PID" "IP ADDRESS"
+echo -e "${BLUE}======================================${NC}"
+
+touch /tmp/active_logins.txt
+
+# Scan active OpenSSH connections
+for pid in $(pgrep -x sshd); do
+    user=$(ps -o user= -p $pid | awk '{print $1}')
+    if [[ -n "$user" && "$user" != "root" ]]; then
+        ip=$(netstat -tnpa 2>/dev/null | grep "$pid/sshd" | grep ESTABLISHED | awk '{print $5}' | cut -d: -f1)
+        if [[ -n "$ip" ]]; then
+            echo "$user $pid $ip" >> /tmp/active_logins.txt
+        fi
+    fi
+done
+
+# Scan active Dropbear connections
+for pid in $(pgrep -x dropbear); do
+    user=$(ps -o user= -p $pid | awk '{print $1}')
+    if [[ -n "$user" && "$user" != "root" ]]; then
+        ip=$(netstat -tnpa 2>/dev/null | grep "$pid/dropbear" | grep ESTABLISHED | awk '{print $5}' | cut -d: -f1)
+        if [[ -n "$ip" ]]; then
+             echo "$user $pid $ip" >> /tmp/active_logins.txt
+        fi
+    fi
+done
+
+if [ -s /tmp/active_logins.txt ]; then
+    sort -u /tmp/active_logins.txt | while read u p i; do
+        printf "${GREEN}%-15s %-12s %s${NC}\n" "$u" "$p" "$i"
+    done
+else
+    echo -e "${RED}No active users found.${NC}"
+fi
+
+rm -f /tmp/active_logins.txt
+echo ""
+echo -ne "${GREEN}Press any key to back on menu ${NC}"; read -n 1 -s -r

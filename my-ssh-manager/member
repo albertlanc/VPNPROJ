@@ -1,0 +1,13 @@
+#!/bin/bash
+clear
+echo -e "\e[1;34m======================================\e[0m"
+echo -e "\e[1;33m           SSH MEMBER LIST            \e[0m"
+echo -e "\e[1;34m======================================\e[0m"
+printf "\e[1;36m%-15s : %s\e[0m\n" "USERNAME" "EXPIRATION DATE"
+echo -e "--------------------------------------"
+awk -F: '($3 >= 1000 && $1 != "nobody") {print $1}' /etc/passwd | while read user; do
+    exp=$(chage -l $user | grep "Account expires" | awk -F": " '{print $2}')
+    printf "%-15s : %s\n" "$user" "$exp"
+done
+echo -e "\e[1;34m======================================\e[0m"
+read -n 1 -s -r -p "Press any key to return..."

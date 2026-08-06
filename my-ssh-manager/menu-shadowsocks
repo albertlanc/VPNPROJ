@@ -1,0 +1,167 @@
+#!/bin/bash
+mkdir -p /etc/xray
+touch /etc/xray/shadowsocks-users.db
+
+GREEN='\e[32m'
+NC='\e[0m'
+
+while true; do
+    clear
+    echo "                    SHADOWSOCKS                       "
+    echo "------------------------------------------------------"
+    echo "1. Create Account Shadowsocks"
+    echo "2. Delete Account Shadowsocks"
+    echo "3. Extending Account Shadowsocks Active Life"
+    echo "4. Check User Login Shadowsocks"
+    echo "5. Menu"
+    echo "6. Exit"
+    echo "------------------------------------------------------"
+    read -p "Select From Options [ 1 - 6 ] : " opt
+
+    case $opt in
+        1|01)
+            clear
+            read -p "Password       : " user
+            read -p "Expired (Days) : " masaaktif
+            if [ -z "$user" ]; then echo "Password cannot be empty!"; sleep 2; continue; fi
+            if [ -z "$masaaktif" ]; then masaaktif=30; fi
+            
+            IP=$(curl -sS ipv4.icanhazip.com 2>/dev/null || echo "127.0.0.1")
+            DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "$IP")
+            created_date=$(date +"%Y-%m-%d")
+            exp_date=$(date -d "+${masaaktif} days" +"%Y-%m-%d" 2>/dev/null || date -v+${masaaktif}d +"%Y-%m-%d")
+            
+            echo "$user $exp_date" >> /etc/xray/shadowsocks-users.db
+            
+            # --- LIVE XRAY INJECTION ---
+            python3 -c "
+import json
+path = '/usr/local/etc/xray/config.json'
+with open(path, 'r') as f: data = json.load(f)
+for ib in data.get('inbounds', []):
+    if ib.get('protocol') == 'shadowsocks' and ib.get('port') in (2443, 3443):
+        ib['settings'].setdefault('clients', []).append({'password': '${user}', 'method': 'aes-128-gcm', 'email': '${user}'})
+with open(path, 'w') as f: json.dump(data, f, indent=2)
+"
+            systemctl restart xray
+            # ---------------------------
+            
+            # Generate Standard SIP002 Links
+            user_pass_b64=$(echo -n "aes-128-gcm:${user}" | base64 -w0)
+            link_tls="ss://${user_pass_b64}@${DOMAIN}:2443#${user}"
+            link_notls="ss://${user_pass_b64}@${IP}:3443#${user}"
+            
+            clear
+            echo -e "${GREEN}=======-SHADOWSOCKS-=======${NC}"
+            echo -e "${GREEN}IP/Host       : ${IP}${NC}"
+            echo -e "${GREEN}Domain        : ${DOMAIN}${NC}"
+            echo -e "${GREEN}Port TLS      : 2443${NC}"
+            echo -e "${GREEN}Port No TLS   : 3443${NC}"
+            echo -e "${GREEN}Password      : ${user}${NC}"
+            echo -e "${GREEN}Method        : aes-128-gcm${NC}"
+            echo -e "${GREEN}Created       : ${created_date}${NC}"
+            echo -e "${GREEN}Expired       : ${exp_date}${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo -e "${GREEN}Link TLS      : ${link_tls}${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo -e "${GREEN}Link No TLS   : ${link_notls}${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        2|02)
+            clear
+            echo -e "${GREEN}Select the existing client you want to remove${NC}"
+            echo -e "${GREEN}Press CTRL+C to return${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            echo -e "${GREEN}     No  Expired   User${NC}"
+            
+            if [ ! -s /etc/xray/shadowsocks-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"
+                sleep 2; continue
+            fi
+
+            users=()
+            exps=()
+            i=1
+            while read -r u e; do
+                users[$i]=$u; exps[$i]=$e
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/xray/shadowsocks-users.db
+            
+            total=${#users[@]}
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                grep -v "^$target_user " /etc/xray/shadowsocks-users.db > /etc/xray/shadowsocks-users.tmp
+                mv /etc/xray/shadowsocks-users.tmp /etc/xray/shadowsocks-users.db
+                
+                # --- LIVE XRAY REMOVAL ---
+                python3 -c "
+import json
+path = '/usr/local/etc/xray/config.json'
+with open(path, 'r') as f: data = json.load(f)
+for ib in data.get('inbounds', []):
+    if ib.get('protocol') == 'shadowsocks' and ib.get('port') in (2443, 3443):
+        clients = ib['settings'].get('clients', [])
+        ib['settings']['clients'] = [c for c in clients if c.get('email') != '${target_user}']
+with open(path, 'w') as f: json.dump(data, f, indent=2)
+"
+                systemctl restart xray
+                # -------------------------
+                
+                echo -e "\n${GREEN}[+] Client $target_user successfully removed.${NC}"
+            else
+                echo -e "\n${GREEN}[!] Invalid selection or aborted.${NC}"
+            fi
+            sleep 2
+            ;;
+        3|03)
+            clear
+            echo -e "${GREEN}Select the existing client you want to extend${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            if [ ! -s /etc/xray/shadowsocks-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"; sleep 2; continue
+            fi
+            users=(); exps=(); i=1
+            while read -r u e; do
+                users[$i]=$u; exps[$i]=$e
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/xray/shadowsocks-users.db
+            total=${#users[@]}
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                echo -ne "${GREEN}Add Days: ${NC}"
+                read add_days
+                if [[ "$add_days" =~ ^[0-9]+$ ]]; then
+                    temp_file=$(mktemp)
+                    while read -r u e; do
+                        if [ "$u" == "$target_user" ]; then
+                            new_exp=$(date -d "$e + $add_days days" +"%Y-%m-%d" 2>/dev/null)
+                            echo "$u $new_exp" >> "$temp_file"
+                            echo -e "\n${GREEN}[+] Extended $target_user to $new_exp.${NC}"
+                        else
+                            echo "$u $e" >> "$temp_file"
+                        fi
+                    done < /etc/xray/shadowsocks-users.db
+                    mv "$temp_file" /etc/xray/shadowsocks-users.db
+                fi
+            fi
+            sleep 2
+            ;;
+        4|04)
+            clear
+            echo "--- CHECK USER LOGIN ---"
+            grep "shadowsocks" /var/log/xray/access.log | tail -n 15 || echo "No logs found."
+            echo ""; read -p "Press any key to return..." -n 1 -s
+            ;;
+        5|05) break ;;
+        6|06) exit 0 ;;
+    esac
+done

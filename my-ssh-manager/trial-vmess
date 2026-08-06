@@ -1,0 +1,28 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'
+user="TRIAL-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 4 | head -n 1)"
+uuid=$(cat /proc/sys/kernel/random/uuid)
+exp_sys=$(date -d "tomorrow" +"%Y-%m-%d")
+
+echo -e "${user} ${uuid} ${exp_sys}" >> /etc/xray/vmess-users.db
+
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "       ${YELLOW}TRIAL ACCOUNT CREATED${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Remarks" "$user"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Domain" "te.gregsmarty.co.uk"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "User ID" "$uuid"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Expired On" "24 Hours (Trial)"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo '{"v":"2","ps":"'$user'","add":"'$DOMAIN'","port":"443","id":"'$uuid'","aid":"0","net":"ws","path":"/vmess","type":"none","host":"'$DOMAIN'","tls":"tls"}' > /tmp/vt.json
+echo '{"v":"2","ps":"'$user'","add":"'$DOMAIN'","port":"443","id":"'$uuid'","aid":"0","net":"ws","path":"/vmess-upgrade","type":"none","host":"[ISP_BUG_HOST]","tls":"tls"}' > /tmp/vh.json
+echo '{"v":"2","ps":"'$user'","add":"'$DOMAIN'","port":"80","id":"'$uuid'","aid":"0","net":"ws","path":"/vmess","type":"none","host":"'$DOMAIN'","tls":"none"}' > /tmp/vn.json
+echo -e "${YELLOW}LINK TLS :${NC}\n${GREEN}vmess://$(base64 -w 0 /tmp/vt.json)${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK HTTP-UPGRADE (CloudFront Bypass) :${NC}\n${GREEN}vmess://$(base64 -w 0 /tmp/vh.json)${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK NO-TLS :${NC}\n${GREEN}vmess://$(base64 -w 0 /tmp/vn.json)${NC}"
+rm -f /tmp/vt.json /tmp/vh.json /tmp/vn.json
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

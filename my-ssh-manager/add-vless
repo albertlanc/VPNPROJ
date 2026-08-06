@@ -1,0 +1,47 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "       ${YELLOW}CREATE VLESS ACCOUNT${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Username       : ${GREEN}"; read user
+echo -ne "${CYAN}Expired (Days) : ${GREEN}"; read masaaktif
+
+uuid=$(cat /proc/sys/kernel/random/uuid)
+exp_sys=$(date -d "$masaaktif days" +"%Y-%m-%d")
+exp_fmt=$(date -d "$masaaktif days" +"%b %d, %Y")
+
+# Save to tracking database
+echo -e "${user} ${uuid} ${exp_sys}" >> /etc/xray/vless-users.db
+
+IP=$(curl -sS ipv4.icanhazip.com)
+if [ -f /etc/xray/domain ]; then DOMAIN=$(cat /etc/xray/domain); else DOMAIN=$IP; fi
+
+# Generate VLESS Links
+vless_tls="vless://${uuid}@${DOMAIN}:443?path=/vless&security=tls&encryption=none&type=ws#${user}"
+vless_http="vless://${uuid}@${DOMAIN}:443?path=/vless-upgrade&security=tls&encryption=none&type=ws&sni=[ISP_BUG_HOST]#${user}"
+vless_nontls="vless://${uuid}@${DOMAIN}:80?path=/vless&security=none&encryption=none&type=ws#${user}"
+
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e ""
+echo -e "${YELLOW}        VLESS ACCOUNT CREATED${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Remarks" "$user"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Domain" "$DOMAIN"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "User ID" "$uuid"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Expired On" "$exp_fmt"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK TLS (Cloudflare/Standard) :${NC}"
+echo -e "${GREEN}${vless_tls}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK HTTP-UPGRADE (CloudFront Bypass) :${NC}"
+echo -e "${GREEN}${vless_http}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}LINK NO-TLS (Port 80) :${NC}"
+echo -e "${GREEN}${vless_nontls}${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

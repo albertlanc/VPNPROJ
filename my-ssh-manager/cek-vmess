@@ -1,0 +1,25 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; CYAN='\e[0;36m'; YELLOW='\e[0;33m'; BLUE='\e[0;34m'
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "        ${YELLOW}VMESS USER ACTIVITY${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+printf "${CYAN}%-12s %-17s %s${NC}\n" "TIME" "IP ADDRESS" "USER"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# Safely extract last 10 connections from Xray log matching the protocol
+grep "accepted" /var/log/xray/access.log | grep "email: " | tail -n 10 | while read -r line; do
+    time=$(echo "$line" | awk '{print $2}')
+    ip=$(echo "$line" | awk '{print $3}' | cut -d: -f1)
+    user=$(echo "$line" | awk -F"email: " '{print $2}')
+    
+    # Simple check to map user if it exists in DB
+    if grep -q " $user " /etc/xray/vmess-users.db 2>/dev/null || [[ "$line" == *"vmess"* ]]; then
+        printf "${GREEN}%-12s %-17s %s${NC}\n" "$time" "$ip" "$user"
+    fi
+done
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${CYAN}* Showing last 10 connections${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"; read -n 1 -s -r

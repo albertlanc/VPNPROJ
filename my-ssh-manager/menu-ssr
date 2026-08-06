@@ -1,0 +1,181 @@
+#!/bin/bash
+mkdir -p /etc/xray
+touch /etc/xray/ssr-users.db
+
+GREEN='\e[32m'
+CYAN='\e[36m'
+NC='\e[0m'
+
+while true; do
+    clear
+    echo "                    SHADOWSOCKSR                      "
+    echo "------------------------------------------------------"
+    echo -e "${CYAN}1.${NC} Create Account SSR"
+    echo -e "${CYAN}2.${NC} Delete Account SSR"
+    echo -e "${CYAN}3.${NC} Extending Account SSR Active Life"
+    echo -e "${CYAN}4.${NC} Show SSR Service Status"
+    echo -e "${CYAN}5.${NC} Menu"
+    echo -e "${CYAN}6.${NC} Exit"
+    echo "------------------------------------------------------"
+    echo -ne "${GREEN}Select From Options [ 1 - 6 ] : ${NC}"
+    read opt
+
+    case $opt in
+        1|01)
+            clear
+            echo -ne "${GREEN}Username : ${NC}"
+            read user
+            if [ -z "$user" ]; then echo "Username cannot be empty!"; sleep 2; continue; fi
+            
+            echo -ne "${GREEN}Expired (Days) : ${NC}"
+            read masaaktif
+            if [ -z "$masaaktif" ]; then masaaktif=30; fi
+            
+            IP=$(curl -sS ipv4.icanhazip.com 2>/dev/null || echo "127.0.0.1")
+            DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "$IP")
+            created_date=$(date +"%Y-%m-%d")
+            exp_date=$(date -d "+${masaaktif} days" +"%Y-%m-%d" 2>/dev/null || date -v+${masaaktif}d +"%Y-%m-%d")
+            
+            # Dynamically assign the next available port starting from 1443
+            LAST_PORT=$(awk '{print $3}' /etc/xray/ssr-users.db | sort -n | tail -n 1)
+            if [ -z "$LAST_PORT" ]; then SSR_PORT=1443; else SSR_PORT=$((LAST_PORT + 1)); fi
+            
+            echo "$user $exp_date $SSR_PORT" >> /etc/xray/ssr-users.db
+            
+            # --- LIVE SSR INJECTION ---
+            python3 -c "
+import json
+path = '/usr/local/shadowsocksr/user-config.json'
+try:
+    with open(path, 'r') as f: data = json.load(f)
+except Exception:
+    data = {'port_password': {}}
+if 'port_password' not in data: data['port_password'] = {}
+data['port_password'][str(${SSR_PORT})] = '${user}'
+with open(path, 'w') as f: json.dump(data, f, indent=2)
+"
+            systemctl restart ssr-server
+            # --------------------------
+            
+            # Generate the SSR Base64 link
+            pass_b64=$(echo -n "${user}" | base64 -w0 | sed 's/=//g;s/\+/-/g;s/\//_/g')
+            remarks_b64=$(echo -n "${user}" | base64 -w0 | sed 's/=//g;s/\+/-/g;s/\//_/g')
+            raw_ssr="${DOMAIN}:${SSR_PORT}:origin:aes-256-cfb:plain:${pass_b64}/?remarks=${remarks_b64}"
+            ssr_link="ssr://$(echo -n "${raw_ssr}" | base64 -w0 | sed 's/=//g;s/\+/-/g;s/\//_/g')"
+            
+            clear
+            echo -e "${GREEN}=======-SHADOWSOCKSR-=======${NC}"
+            echo -e "${GREEN}IP/Host      : ${IP}${NC}"
+            echo -e "${GREEN}Domain       : ${DOMAIN}${NC}"
+            echo -e "${GREEN}Port         : ${SSR_PORT}${NC}"
+            echo -e "${GREEN}Password     : ${user}${NC}"
+            echo -e "${GREEN}Encryption   : aes-256-cfb${NC}"
+            echo -e "${GREEN}Protocol     : origin${NC}"
+            echo -e "${GREEN}Obfs         : plain${NC}"
+            echo -e "${GREEN}Max Device   : 2${NC}"
+            echo -e "${GREEN}Created      : ${created_date}${NC}"
+            echo -e "${GREEN}Expired      : ${exp_date}${NC}"
+            echo -e "${GREEN}============================${NC}"
+            echo -e "${GREEN}Link SSR     : ${ssr_link}${NC}"
+            echo -e "${GREEN}============================${NC}"
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        2|02)
+            clear
+            echo -e "${GREEN}Select the existing client you want to remove${NC}"
+            echo -e "${GREEN}Press CTRL+C to return${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            echo -e "${GREEN}     No  Expired   User (Port)${NC}"
+            
+            if [ ! -s /etc/xray/ssr-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"; sleep 2; continue
+            fi
+
+            users=(); exps=(); ports=(); i=1
+            while read -r u e p; do
+                users[$i]=$u; exps[$i]=$e; ports[$i]=$p
+                echo -e "${GREEN}     ${i}) ${u} ${e} (${p})${NC}"
+                ((i++))
+            done < /etc/xray/ssr-users.db
+            
+            total=${#users[@]}
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                target_port="${ports[$client_num]}"
+                
+                grep -v "^$target_user " /etc/xray/ssr-users.db > /etc/xray/ssr-users.tmp
+                mv /etc/xray/ssr-users.tmp /etc/xray/ssr-users.db
+                
+                # --- LIVE SSR REMOVAL ---
+                python3 -c "
+import json
+path = '/usr/local/shadowsocksr/user-config.json'
+with open(path, 'r') as f: data = json.load(f)
+if str(${target_port}) in data.get('port_password', {}):
+    del data['port_password'][str(${target_port})]
+with open(path, 'w') as f: json.dump(data, f, indent=2)
+"
+                systemctl restart ssr-server
+                # ------------------------
+                
+                echo -e "\n${GREEN}[+] Client $target_user successfully removed.${NC}"
+            else
+                echo -e "\n${GREEN}[!] Invalid selection or aborted.${NC}"
+            fi
+            sleep 2
+            ;;
+        3|03)
+            clear
+            echo -e "${GREEN}Select the existing client you want to extend${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            if [ ! -s /etc/xray/ssr-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"; sleep 2; continue
+            fi
+            users=(); exps=(); ports=(); i=1
+            while read -r u e p; do
+                users[$i]=$u; exps[$i]=$e; ports[$i]=$p
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/xray/ssr-users.db
+            total=${#users[@]}
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                echo -ne "${GREEN}Add Days: ${NC}"
+                read add_days
+                if [[ "$add_days" =~ ^[0-9]+$ ]]; then
+                    temp_file=$(mktemp)
+                    while read -r u e p; do
+                        if [ "$u" == "$target_user" ]; then
+                            new_exp=$(date -d "$e + $add_days days" +"%Y-%m-%d" 2>/dev/null)
+                            echo "$u $new_exp $p" >> "$temp_file"
+                            echo -e "\n${GREEN}[+] Extended $target_user to $new_exp.${NC}"
+                        else
+                            echo "$u $e $p" >> "$temp_file"
+                        fi
+                    done < /etc/xray/ssr-users.db
+                    mv "$temp_file" /etc/xray/ssr-users.db
+                fi
+            fi
+            sleep 2
+            ;;
+        4|04)
+            clear
+            echo "--- SSR SERVICE STATUS ---"
+            if systemctl is-active --quiet ssr-server; then
+                echo -e "Status: \e[32m[ ONLINE / ACTIVE ]\e[0m"
+            else
+                echo -e "Status: \e[31m[ OFFLINE / INACTIVE ]\e[0m"
+            fi
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        5|05) break ;;
+        6|06) exit 0 ;;
+    esac
+done

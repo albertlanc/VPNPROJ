@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# Sub-menu function for Option 1 (SSH & User Management)
+ssh_submenu() {
+    while true; do
+        clear
+        echo -e "\E[0;36m===================================================\E[0m"
+        echo -e "\E[0;33m          SSH & USER MANAGEMENT MENU               \E[0m"
+        echo -e "\E[0;36m===================================================\E[0m"
+        echo -e " [1]  Create SSH / VPN Account"
+        echo -e " [2]  Create Trial Account"
+        echo -e " [3]  Delete User"
+        echo -e " [4]  Renew User Expiration"
+        echo -e " [5]  Check User Login Status"
+        echo -e " [6]  Member User List"
+        echo -e " [7]  Kill Multi-Login Users"
+        echo -e " [8]  Set Auto-Delete Expired Users"
+        echo -e " [9]  User Backup"
+        echo -e " [10] User Restore"
+        echo -e " [11] Webmin Management"
+        echo -e " [12] Show OpenVPN Config"
+        echo -e " [13] Modify SSH Login Limit"
+        echo -e " [0]  Back to Main Menu"
+        echo -e "\E[0;36m===================================================\E[0m"
+        read -p "Select an option [0-13]: " sub_choix
+
+        case $sub_choix in
+            1)
+                clear
+                if command -v add-ssh &>/dev/null; then
+                    add-ssh
+                else
+                    echo -e "\E[1;31m[!] add-ssh script not found.\E[0m"
+                fi
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            2)
+                clear
+                echo -e "\E[0;33m--- Create Trial Account ---\E[0m"
+                # Add your trial logic here
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            12)
+                clear
+                echo -e "\E[0;33m--- OpenVPN Configuration ---\E[0m"
+                # Add your openvpn display code here
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            13)
+                clear
+                echo -e "\E[0;33m--- Modify SSH Login Limit ---\E[0m"
+                # Add your login limit code here
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            0)
+                break
+                ;;
+            *)
+                echo -e "\E[1;31m[!] Invalid option.\E[0m"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
+# Main Application Loop
+while true; do
+    clear
+    echo -e "\E[0;36m===================================================\E[0m"
+    echo -e "\E[0;33m             LIGHTWEIGHT VPN MANAGER               \E[0m"
+    echo -e "\E[0;36m===================================================\E[0m"
+    echo -e "Server IP : $(curl -sS ipv4.icanhazip.com || hostname -I | awk '{print $1}')"
+    echo -e "OS        : $(grep -oP 'PRETTY_NAME="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux")"
+    echo -e "\E[0;36m===================================================\E[0m"
+    echo -e " [1] SSH & User Management Sub-menu"
+    echo -e " [2] Add Xray User (VMess / VLESS)"
+    echo -e " [3] Restart All Services"
+    echo -e " [4] Check Service Status"
+    echo -e " [0] Exit Menu"
+    echo -e "\E[0;36m===================================================\E[0m"
+    read -p "Select an option: " choix
+
+    case $choix in
+        1)
+            ssh_submenu
+            ;;
+        2)
+            clear
+            echo "Xray management placeholder..."
+            read -n 1 -s -r -p "Press any key to continue..."
+            ;;
+        3)
+            clear
+            systemctl restart ssh 2>/dev/null || systemctl restart sshd
+            echo "Services restarted."
+            read -n 1 -s -r -p "Press any key to continue..."
+            ;;
+        4)
+            clear
+            systemctl status ssh --no-pager 2>/dev/null
+            read -n 1 -s -r -p "Press any key to continue..."
+            ;;
+        0)
+            exit 0
+            ;;
+        *)
+            echo -e "\E[1;31m[!] Invalid option.\E[0m"
+            sleep 1
+            ;;
+    esac
+done

@@ -1,0 +1,46 @@
+#!/bin/bash
+NC='\e[0m'; GREEN='\e[0;32m'; YELLOW='\e[1;33m'; BLUE='\e[0;34m'; RED='\e[1;31m'
+clear
+echo -e "${BLUE}======================================${NC}"
+echo -e "${YELLOW}         RENEW VMESS ACCOUNT          ${NC}"
+echo -e "${BLUE}======================================${NC}"
+printf "${GREEN}%-5s %-15s %s${NC}\n" "NO" "USER" "EXPIRES"
+echo -e "${BLUE}======================================${NC}"
+count=1
+declare -A user_map
+if [ -f /etc/xray/vmess-users.db ]; then
+    while read -r u uuid exp; do
+        printf "${GREEN}%-5s %-15s %s${NC}\n" "$count." "$u" "$exp"
+        user_map[$count]=$u
+        ((count++))
+    done < /etc/xray/vmess-users.db
+fi
+printf "${GREEN}%-5s %s${NC}\n" "0." "Back to Menu"
+echo -e "${BLUE}======================================${NC}"
+echo -ne "${GREEN}Select Number or Username : ${NC}"; read choice
+if [[ "$choice" == "0" || -z "$choice" ]]; then exit 0; fi
+
+target_user=""
+if [[ "$choice" =~ ^[0-9]+$ ]]; then target_user=${user_map[$choice]}; else target_user=$choice; fi
+
+if grep -q "^${target_user} " /etc/xray/vmess-users.db 2>/dev/null; then
+    echo -ne "${GREEN}Add Days : ${NC}"; read days
+    old_exp=$(grep "^${target_user} " /etc/xray/vmess-users.db | awk '{print $3}')
+    old_exp_sec=$(date -d "$old_exp" +%s)
+    now_sec=$(date +%s)
+    if [[ $now_sec -ge $old_exp_sec ]]; then
+        new_sec=$((now_sec + (days * 86400)))
+    else
+        new_sec=$((old_exp_sec + (days * 86400)))
+    fi
+    new_exp=$(date -d @$new_sec +"%Y-%m-%d")
+    
+    # Update the tracking database
+    sed -i "s/^${target_user} .*/${target_user} $(grep "^${target_user} " /etc/xray/vmess-users.db | awk '{print $2}') ${new_exp}/" /etc/xray/vmess-users.db
+    
+    echo -e "\n${GREEN}[SUCCESS]${NC} User $target_user renewed until $new_exp."
+else
+    echo -e "\n${RED}[ERROR]${NC} User not found."
+fi
+echo ""
+echo -ne "${GREEN}Press any key to back on menu ${NC}"; read -n 1 -s -r

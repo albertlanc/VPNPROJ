@@ -1,6 +1,6 @@
 
 get_license_days() {
-    local authorized_url="https://raw.githubusercontent.com/albertlanc/VPNPROJ/main/licensed-ips.txt"
+    local authorized_url="https://falling-fire-5f4c.robertasholamie.workers.dev/licensed-ips.txt"
     local server_ip=$(curl -sS ipv4.icanhazip.com 2>/dev/null || hostname -I | awk '{print $1}')
     local license_data=$(curl -s "$authorized_url")
     local matched_line=$(echo "$license_data" | grep "^$server_ip:")

@@ -1,5 +1,5 @@
 #!/bin/bash
-# install.sh - Master VPN Installer
+# install.sh - Master VPN Installer with TTY Input Fix
 
 if [ "${EUID}" -ne 0 ]; then
     echo "[!] This script must be run as root."
@@ -12,8 +12,8 @@ clear
 echo "=================================================="
 echo "       VPN DOMAIN & NETWORK SETUP                 "
 echo "=================================================="
-read -p "Enter your Subdomain (e.g., vpn.yourdomain.com): " DOMAIN
-read -p "Enter your SlowDNS Nameserver (e.g., ns.yourdomain.com): " NS_DOMAIN
+read -p "Enter your Subdomain (e.g., vpn.yourdomain.com): " DOMAIN < /dev/tty
+read -p "Enter your SlowDNS Nameserver (e.g., ns.yourdomain.com): " NS_DOMAIN < /dev/tty
 echo "=================================================="
 
 clear
@@ -68,7 +68,6 @@ if curl --output /dev/null --silent --head --fail "$REPO_URL/core/slowdns-instal
     bash /tmp/vpn/slowdns-install.sh
 fi
 
-# Inject the Nameserver variable into the service file if it exists
 if [ -f /etc/systemd/system/slowdns.service ]; then
     sed -i "s/dns.yourdomain.com/$NS_DOMAIN/g" /etc/systemd/system/slowdns.service
     systemctl daemon-reload

@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# Colors
+B_GOLD='\e[1;33m'
+B_WHITE='\e[1;37m'
+B_GREEN='\e[1;32m'
+B_RED='\e[1;31m'
+B_MAGENTA='\e[1;35m'
+NC='\e[0m'
+
+while true; do
+    clear
+    echo -e "${B_GOLD}┌────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${B_GOLD}│                  ${B_WHITE}ACTIVE SSH USERS MONITOR              ${B_GOLD}│${NC}"
+    echo -e "${B_GOLD}└────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+    printf " ${B_GOLD}%-4s %-12s %-12s %-14s %-10s${NC}\n" "NO." "USERNAME" "STATUS" "CLIENT / IP" "DAYS LEFT"
+    echo -e "${B_GOLD}────────────────────────────────────────────────────────${NC}"
+
+    i=1
+    unset user_map
+    declare -A user_map
+
+    # Scan all system users with login shells
+    for user in $(awk -F: '($3 >= 1000 && $3 != 65534) {print $1}' /etc/passwd); do
+        user_map[$i]="$user"
+
+        # 1. Check if Account is Locked (Offline enforced)
+        lock_status=$(passwd -S "$user" 2>/dev/null | awk '{print $2}')
+        
+        # 2. Check Online Status
+        who_output=$(who | grep -w "$user" | head -n 1)
+        
+        if [ "$lock_status" == "L" ] || [ "$lock_status" == "LK" ]; then
+            status="LOCKED"
+            s_color=$B_RED
+            client="Disabled"
+        elif [ -n "$who_output" ]; then
+            status="Online"
+            s_color=$B_GREEN
+            client=$(echo "$who_output" | awk '{print $5}' | tr -d '()')
+            [ -z "$client" ] && client="Active"
+        elif pgrep -u "$user" sshd &>/dev/null || pgrep -u "$user" dropbear &>/dev/null; then
+            status="Online"
+            s_color=$B_GREEN
+            # Fallback to grab IP from netstat if 'who' hides it (common with proxy tunnels)
+            pid=$(pgrep -u "$user" sshd | head -n 1)
+            [ -z "$pid" ] && pid=$(pgrep -u "$user" dropbear | head -n 1)
+            if [ -n "$pid" ]; then
+                client=$(ss -tnp 2>/dev/null | grep "$pid" | awk '{print $5}' | cut -d: -f1 | grep -v "127.0.0.1" | head -n 1)
+            fi
+            [ -z "$client" ] || [ "$client" == "N/A" ] && client="Connected"
+        else
+            status="Offline"
+            s_color=$NC
+            client="N/A"
+        fi
+
+        # 3. Calculate Days Left
+        expire_days=$(awk -F: -v u="$user" '$1==u {print $8}' /etc/shadow)
+        if [ -z "$expire_days" ] || [ "$expire_days" = "" ]; then
+            days="Unlimited"
+        else
+            curr_days=$(( $(date +%s) / 86400 ))
+            diff=$(( expire_days - curr_days ))
+            if [ $diff -ge 0 ]; then
+                days="${diff} Days"
+            else
+                days="Expired"
+            fi
+        fi
+
+        printf " ${B_WHITE}%-4s %-12s ${s_color}%-12s ${NC}%-14s ${B_WHITE}%-10s${NC}\n" "$i" "$user" "$status" "$client" "$days"
+        i=$((i + 1))
+    done
+
+    echo -e "${B_GOLD}────────────────────────────────────────────────────────${NC}"
+    echo -e " ${B_WHITE}Options:${NC}"
+    echo -e " ${B_WHITE}[1 to $((i-1))]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Toggle User Access (Lock / Unlock)${NC}"
+    echo -e " ${B_WHITE}[0]${NC}          ${B_MAGENTA}•${NC} ${B_WHITE}Back to Main Menu${NC}"
+    echo ""
+    echo -ne " ${B_WHITE}Select option : ${NC}"
+    read opt
+
+    if [ "$opt" == "0" ] || [ "$opt" == "00" ]; then
+        break
+    elif [[ "$opt" =~ ^[0-9]+$ ]] && [ "$opt" -ge 1 ] && [ "$opt" -lt "$i" ]; then
+        target_user="${user_map[$opt]}"
+        lock_check=$(passwd -S "$target_user" 2>/dev/null | awk '{print $2}')
+        
+        if [ "$lock_check" == "L" ] || [ "$lock_check" == "LK" ]; then
+            usermod -U "$target_user" 2>/dev/null
+            echo -e "\n${B_GREEN} User $target_user has been UNLOCKED (Access Restored).${NC}"
+        else
+            usermod -L "$target_user" 2>/dev/null
+            pkill -u "$target_user" 2>/dev/null
+            echo -e "\n${B_RED} User $target_user has been LOCKED and disconnected.${NC}"
+        fi
+        sleep 1.5
+    else
+        echo -e "\n${B_RED} Invalid option!${NC}"
+        sleep 1
+    fi
+done

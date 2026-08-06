@@ -1,0 +1,84 @@
+#!/bin/bash
+# Color Definitions
+NC='\e[0m'
+CYAN='\e[0;36m'
+GREEN='\e[1;32m'
+YELLOW='\e[1;33m'
+BLUE='\e[0;34m'
+
+# Auto-fetch IP and Domain safely
+IP=$(curl -sS ipv4.icanhazip.com)
+if [ -f /etc/xray/domain ]; then
+    DOMAIN=$(cat /etc/xray/domain)
+else
+    DOMAIN=$IP
+fi
+
+# Fetch generic pubkey or fallback to default placeholder
+if [ -f /etc/slowdns/server.pub ]; then
+    PUBKEY=$(cat /etc/slowdns/server.pub)
+else
+    PUBKEY="68a93ff4e08ea51657ede89c8dcc6534088d8461c1209743c11b96399beb1408"
+fi
+
+NS="ns-$DOMAIN"
+
+clear
+echo -e "${BLUE}======================================${NC}"
+echo -e "${YELLOW}         CREATE TRIAL ACCOUNT         ${NC}"
+echo -e "${BLUE}======================================${NC}"
+read -p "Max Login (Default 1): " maxlogin
+if [[ -z "$maxlogin" ]]; then
+    maxlogin=1
+fi
+
+# Generate credentials
+Login="Trial$((RANDOM % 9000 + 1000))"
+Pass="1"
+Exp_Date=$(date -d "tomorrow" +"%b %d, %Y")
+Exp_Sys=$(date -d "tomorrow" +"%Y-%m-%d")
+
+# Create User Quietly
+useradd -e "$Exp_Sys" -s /bin/false -M $Login
+echo -e "$Pass\n$Pass\n" | passwd $Login &> /dev/null
+
+clear
+echo -e "${BLUE}======================================${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Username" "$Login"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Password" "$Pass"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s Connection(s)${NC}\n" "Max Login" "$maxlogin"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Expired On" "$Exp_Date"
+echo -e "${BLUE}======================================${NC}"
+echo -e "${YELLOW}          SERVER INFORMATION          ${NC}"
+echo -e "${BLUE}======================================${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "IP" "$IP"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Host" "$DOMAIN"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Nameserver" "$NS"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "PubKey" "$PUBKEY"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "OpenSSH" "22"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SSH-WS" "80"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Custom SSH" "8880"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SSH-SSL-WS" "443"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "Dropbear" "109, 143"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SSL/TLS" "447, 777"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "UDPGW" "7100-7300"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SOCKS5" "1080"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "OVPN TCP" "http://$DOMAIN:85/client-tcp.ovpn"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "OVPN UDP" "http://$DOMAIN:85/client-udp.ovpn"
+echo -e "${BLUE}======================================${NC}"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SSH-80" "$DOMAIN:80@$Login:$Pass"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SSH-8880" "$DOMAIN:8880@$Login:$Pass"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SSH-443" "$DOMAIN:443@$Login:$Pass"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "SOCKS5" "$DOMAIN:1080:$Login:$Pass"
+printf "${CYAN}%-14s${NC} : ${GREEN}%s${NC}\n" "HTTP Proxy" "$DOMAIN:8080:$Login:$Pass"
+echo -e "${BLUE}======================================${NC}"
+echo -e "${CYAN}(Payload WSS)${NC}"
+echo -e "${GREEN}GET wss://bug.com [protocol][crlf]Host: $DOMAIN[crlf]Upgrade: websocket[crlf][crlf]${NC}\n"
+echo -e "${CYAN}(Payload WS - Port 80)${NC}"
+echo -e "${GREEN}GET / HTTP/1.1[crlf]Host: $DOMAIN[crlf]Upgrade: websocket[crlf][crlf]${NC}\n"
+echo -e "${CYAN}(Payload Custom Bypass - Port 8880)${NC}"
+echo -e "${GREEN}GET http://$DOMAIN:8880 HTTP/1.1[crlf]Host: [ISP_BUG_HOST][crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]${NC}"
+echo -e "${BLUE}======================================${NC}"
+echo -ne "${CYAN}Press any key to back on menu ${NC}"
+read -n 1 -s -r
+echo ""

@@ -1,0 +1,39 @@
+#!/bin/bash
+NC='\e[0m'
+GREEN='\e[0;32m'
+CYAN='\e[0;36m'
+YELLOW='\e[0;33m'
+BLUE='\e[0;34m'
+
+clear
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "               ${YELLOW}XRAY VMESS MANAGER${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e ""
+echo -e "   ${CYAN}[01]${NC} ${GREEN}Create VMess Account${NC}"
+echo -e "   ${CYAN}[02]${NC} ${GREEN}Create Trial Account${NC}"
+echo -e "   ${CYAN}[03]${NC} ${GREEN}Create Timed VMess (Mins)${NC}"
+echo -e "   ${CYAN}[04]${NC} ${GREEN}Extend VMess Account${NC}"
+echo -e "   ${CYAN}[05]${NC} ${GREEN}Delete VMess Account${NC}"
+echo -e "   ${CYAN}[06]${NC} ${GREEN}Check User Login${NC}"
+echo -e "   ${CYAN}[07]${NC} ${GREEN}List VMess Members${NC}"
+echo -e "   ${CYAN}[08]${NC} ${GREEN}Clean Expired Users ${YELLOW}(Manual)${NC}"
+echo -e ""
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "   ${CYAN}[00]${NC} ${GREEN}Back to Main Menu${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo -ne "${GREEN}Select menu : ${NC}"; read opt
+
+case $opt in
+    1|01) clear; add-vmess 2>/dev/null || add-ws 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    2|02) clear; trial-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    3|03) clear; timed-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    4|04) clear; renew-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    5|05) clear; del-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    6|06) clear; cek-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    7|07) clear; member-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    8|08) clear; exp-vmess 2>/dev/null || { echo -e "\n[!] Command missing."; read -n 1 -s -r; }; menu-vmess ;;
+    0|00) clear; menu ;;
+    *) echo -e "\n[!] Invalid option."; sleep 1; menu-vmess ;;
+esac

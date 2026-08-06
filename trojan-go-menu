@@ -1,0 +1,168 @@
+#!/bin/bash
+mkdir -p /etc/xray
+touch /etc/xray/trojango-users.db
+
+GREEN='\e[32m'
+NC='\e[0m'
+
+while true; do
+    clear
+    echo "                      TROJAN GO                       "
+    echo "------------------------------------------------------"
+    echo "1. Create Account Trojan Go"
+    echo "2. Delete Account Trojan Go"
+    echo "3. Extending Account Trojan Go Active Life"
+    echo "4. Check User Login Trojan Go"
+    echo "5. Menu"
+    echo "6. Exit"
+    echo "------------------------------------------------------"
+    read -p "Select From Options [ 1 - 6 ] : " opt
+
+    case $opt in
+        1|01)
+            clear
+            read -p "Password       : " user
+            read -p "Expired (Days) : " masaaktif
+            if [ -z "$user" ]; then echo "Password cannot be empty!"; sleep 2; continue; fi
+            if [ -z "$masaaktif" ]; then masaaktif=30; fi
+            
+            IP=$(curl -sS ipv4.icanhazip.com 2>/dev/null || echo "127.0.0.1")
+            DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "$IP")
+            
+            created_date=$(date +"%Y-%m-%d")
+            exp_date=$(date -d "+${masaaktif} days" +"%Y-%m-%d" 2>/dev/null || date -v+${masaaktif}d +"%Y-%m-%d")
+            
+            # Save to database
+            echo "$user $exp_date" >> /etc/xray/trojango-users.db
+            
+            # Generate Link
+            link="trojan-go://${user}@${DOMAIN}:2087/?sni=${DOMAIN}&type=ws&host=${DOMAIN}&path=/trojango&encryption=none#${user}"
+            
+            clear
+            echo -e "${GREEN}=======-TROJAN-GO-=======${NC}"
+            echo -e "${GREEN}Remarks       : ${user}${NC}"
+            echo -e "${GREEN}IP/Host       : ${IP}${NC}"
+            echo -e "${GREEN}Address       : ${DOMAIN}${NC}"
+            echo -e "${GREEN}Port          : 2087${NC}"
+            echo -e "${GREEN}Key           : ${user}${NC}"
+            echo -e "${GREEN}Encryption    : none${NC}"
+            echo -e "${GREEN}Path          : /trojango${NC}"
+            echo -e "${GREEN}Created       : ${created_date}${NC}"
+            echo -e "${GREEN}Expired       : ${exp_date}${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo -e "${GREEN}Link TrGo  : ${link}${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        2|02)
+            clear
+            echo -e "${GREEN}Select the existing client you want to remove${NC}"
+            echo -e "${GREEN}Press CTRL+C to return${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            echo -e "${GREEN}     No  Expired   User${NC}"
+            
+            if [ ! -s /etc/xray/trojango-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            users=()
+            exps=()
+            i=1
+            while read -r u e; do
+                users[$i]=$u
+                exps[$i]=$e
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/xray/trojango-users.db
+            
+            total=${#users[@]}
+            
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                grep -v "^$target_user " /etc/xray/trojango-users.db > /etc/xray/trojango-users.tmp
+                mv /etc/xray/trojango-users.tmp /etc/xray/trojango-users.db
+                systemctl restart xray >/dev/null 2>&1
+                echo -e "\n${GREEN}[+] Client $target_user successfully removed.${NC}"
+            else
+                echo -e "\n${GREEN}[!] Invalid selection or aborted.${NC}"
+            fi
+            sleep 2
+            ;;
+        3|03)
+            clear
+            echo -e "${GREEN}Select the existing client you want to extend${NC}"
+            echo -e "${GREEN}Press CTRL+C to return${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            echo -e "${GREEN}     No  Expired   User${NC}"
+            
+            if [ ! -s /etc/xray/trojango-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            users=()
+            exps=()
+            i=1
+            while read -r u e; do
+                users[$i]=$u
+                exps[$i]=$e
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/xray/trojango-users.db
+            
+            total=${#users[@]}
+            
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                echo -ne "${GREEN}Add Days: ${NC}"
+                read add_days
+                if [[ "$add_days" =~ ^[0-9]+$ ]]; then
+                    temp_file=$(mktemp)
+                    while read -r u e; do
+                        if [ "$u" == "$target_user" ]; then
+                            new_exp=$(date -d "$e + $add_days days" +"%Y-%m-%d" 2>/dev/null)
+                            echo "$u $new_exp" >> "$temp_file"
+                            echo -e "\n${GREEN}[+] Extended $target_user to $new_exp.${NC}"
+                        else
+                            echo "$u $e" >> "$temp_file"
+                        fi
+                    done < /etc/xray/trojango-users.db
+                    mv "$temp_file" /etc/xray/trojango-users.db
+                    systemctl restart xray >/dev/null 2>&1
+                else
+                    echo -e "\n${GREEN}[!] Invalid number of days.${NC}"
+                fi
+            else
+                echo -e "\n${GREEN}[!] Invalid selection or aborted.${NC}"
+            fi
+            sleep 2
+            ;;
+        4|04)
+            clear
+            echo "--- CHECK USER LOGIN ---"
+            if [ -f /var/log/xray/access.log ]; then
+                grep "trojan" /var/log/xray/access.log | tail -n 15
+            else
+                echo "No access logs available."
+            fi
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        5|05)
+            break
+            ;;
+        6|06)
+            exit 0
+            ;;
+    esac
+done

@@ -1,0 +1,115 @@
+#!/bin/bash
+
+# Colors
+B_GOLD='\e[1;33m'
+B_WHITE='\e[1;37m'
+B_GREEN='\e[1;32m'
+B_RED='\e[1;31m'
+NC='\e[0m'
+
+clear
+echo -e "${B_GOLD}┌────────────────────────────────────────────────────────┐${NC}"
+echo -e "${B_GOLD}│                  ${B_WHITE}SYSTEM SERVICE STATUS                 ${B_GOLD}│${NC}"
+echo -e "${B_GOLD}└────────────────────────────────────────────────────────┘${NC}"
+echo ""
+
+# Helper to print aligned service status
+print_status() {
+    local name=$1
+    local state=$2
+    if [ "$state" == "RUNNING" ]; then
+        printf " ${B_WHITE}%-28s : [ ${B_GREEN}RUNNING${B_WHITE} ]${NC}\n" "$name"
+    else
+        printf " ${B_WHITE}%-28s : [ ${B_RED}STOPPED${B_WHITE} ]${NC}\n" "$name"
+    fi
+}
+
+# Check Xray Core
+if systemctl is-active --quiet xray 2>/dev/null; then
+    print_status "Xray Core (VMess/VLESS)" "RUNNING"
+else
+    print_status "Xray Core (VMess/VLESS)" "STOPPED"
+fi
+
+# Hysteria
+if systemctl is-active --quiet hysteria hysteria-server 2>/dev/null || pgrep -f hysteria &>/dev/null; then
+    print_status "Hysteria Protocol" "RUNNING"
+else
+    print_status "Hysteria Protocol" "STOPPED"
+fi
+
+# Shadowsocks (Check service, process, or Xray config inbound)
+if systemctl is-active --quiet shadowsocks shadowsocks-libev 2>/dev/null || grep -qi "shadowsocks" /etc/xray/config.json 2>/dev/null; then
+    print_status "Shadowsocks" "RUNNING"
+else
+    print_status "Shadowsocks" "STOPPED"
+fi
+
+# Trojan (Check service, process, or Xray config inbound)
+if systemctl is-active --quiet trojan trojan-go 2>/dev/null || grep -qi "trojan" /etc/xray/config.json 2>/dev/null; then
+    print_status "Trojan Service" "RUNNING"
+else
+    print_status "Trojan Service" "STOPPED"
+fi
+
+# UDP Custom Service
+if ss -tulpn 2>/dev/null | grep -q ":7300 " || pgrep -f udp-custom &>/dev/null; then
+    print_status "UDP Custom Service" "RUNNING"
+else
+    print_status "UDP Custom Service" "STOPPED"
+fi
+
+# Dropbear SSH
+if systemctl is-active --quiet dropbear 2>/dev/null; then
+    print_status "Dropbear SSH" "RUNNING"
+else
+    print_status "Dropbear SSH" "STOPPED"
+fi
+
+# Stunnel4 TLS
+if systemctl is-active --quiet stunnel4 2>/dev/null; then
+    print_status "Stunnel4 TLS" "RUNNING"
+else
+    print_status "Stunnel4 TLS" "STOPPED"
+fi
+
+# Nginx WebServer
+if systemctl is-active --quiet nginx 2>/dev/null; then
+    print_status "Nginx WebServer" "RUNNING"
+else
+    print_status "Nginx WebServer" "STOPPED"
+fi
+
+# SSH-WS Proxy
+if systemctl is-active --quiet ssh-ws 2>/dev/null || pgrep -f ssh-ws &>/dev/null; then
+    print_status "SSH-WS Proxy" "RUNNING"
+else
+    print_status "SSH-WS Proxy" "STOPPED"
+fi
+
+# HTTP Proxy Port 8080
+if ss -tulpn 2>/dev/null | grep -q ":8080 "; then
+    print_status "HTTP Proxy (Port 8080)" "RUNNING"
+else
+    print_status "HTTP Proxy (Port 8080)" "STOPPED"
+fi
+
+# Cron Scheduler
+if systemctl is-active --quiet cron 2>/dev/null; then
+    print_status "Cron Scheduler" "RUNNING"
+else
+    print_status "Cron Scheduler" "STOPPED"
+fi
+
+echo ""
+echo -e "${B_GOLD}────────────────────────────────────────────────────────${NC}"
+
+# System Metrics
+uptime_string=$(uptime -p | sed 's/up //')
+ram_output=$(free -m | awk 'NR==2{printf "%s MB / %s MB", $3, $2}')
+
+echo -e " ${B_WHITE}Server Uptime :${NC} ${B_GOLD}${uptime_string}${NC}"
+echo -e " ${B_WHITE}RAM Usage     :${NC} ${B_GOLD}${ram_output}${NC}"
+echo -e "${B_GOLD}────────────────────────────────────────────────────────${NC}"
+echo ""
+read -n 1 -s -r -p "Press any key to return..."

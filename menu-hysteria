@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# Colors
+B_GOLD='\e[1;33m'
+B_WHITE='\e[1;37m'
+B_GREEN='\e[1;32m'
+B_RED='\e[1;31m'
+B_MAGENTA='\e[1;35m'
+NC='\e[0m'
+
+while true; do
+    clear
+    echo -e "${B_GOLD}┌────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${B_GOLD}│                  ${B_WHITE}HYSTERIA 2 PROTOCOL MANAGER           ${B_GOLD}│${NC}"
+    echo -e "${B_GOLD}└────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+    
+    if systemctl is-active --quiet hysteria-server; then
+        status="${B_GREEN}RUNNING (Port 7122 / v2 Core)${NC}"
+    else
+        status="${B_RED}STOPPED${NC}"
+    fi
+    
+    server_ip=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
+    hy_pass=$(grep -A 2 "auth:" /etc/hysteria/config.yaml | grep "password:" | awk '{print $2}')
+    
+    echo -e " ${B_WHITE}Status     :${NC} $status"
+    echo -e " ${B_WHITE}Port Range :${NC} ${B_GOLD}7122 / 1-65535 Port Hopping Active${NC}"
+    echo -e " ${B_WHITE}Server IP  :${NC} ${B_GOLD}${server_ip}${NC}"
+    echo -e " ${B_WHITE}Password   :${NC} ${B_GOLD}${hy_pass}${NC}"
+    echo -e ""
+    echo -e "${B_GOLD}┌────────────────────────────────────────────────────────┐${NC}"
+    echo -e " ${B_WHITE}[01]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Check Hysteria Status & Ports${NC}"
+    echo -e " ${B_WHITE}[02]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Restart Hysteria Service${NC}"
+    echo -e " ${B_WHITE}[03]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}View Connection Details / URI${NC}"
+    echo -e " ${B_WHITE}[04]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Edit Hysteria Config (/etc/hysteria/config.yaml)${NC}"
+    echo -e " ${B_WHITE}[05]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}View Live Hysteria Logs${NC}"
+    echo -e "${B_GOLD}├────────────────────────────────────────────────────────┤${NC}"
+    echo -e " ${B_WHITE}[00]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Back to Main Menu${NC}"
+    echo -e "${B_GOLD}└────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+    echo -ne " ${B_WHITE}Select menu : ${NC}"
+    read hy_choice
+    
+    case $hy_choice in
+        1|01)
+            clear
+            echo -e "${B_GOLD}--- HYSTERIA 2 SYSTEM STATUS ---${NC}"
+            systemctl status hysteria-server --no-pager
+            echo ""
+            read -n 1 -s -r -p "Press any key to return..."
+            ;;
+        2|02)
+            clear
+            echo -e "${B_GREEN}Restarting Hysteria 2...${NC}"
+            systemctl restart hysteria-server
+            sleep 1
+            echo -e "${B_GREEN}Done!${NC}"
+            read -n 1 -s -r -p "Press any key to return..."
+            ;;
+        3|03)
+            clear
+            echo -e "${B_GOLD}==========================================================${NC}"
+            echo -e "${B_GOLD}               HYSTERIA 2 CONNECTION INFO                 ${NC}"
+            echo -e "${B_GOLD}==========================================================${NC}"
+            echo -e " ${B_WHITE}Address  :${NC} ${B_GREEN}${server_ip}${NC}"
+            echo -e " ${B_WHITE}Base Port:${NC} ${B_GREEN}7122${NC}"
+            echo -e " ${B_WHITE}Hopping  :${NC} ${B_GREEN}1-65535 (Supported via iptables)${NC}"
+            echo -e " ${B_WHITE}Password :${NC} ${B_GREEN}${hy_pass}${NC}"
+            echo -e " ${B_WHITE}SNI / Peer:${NC} ${B_GREEN}bing.com (Insecure Allow required)${NC}"
+            echo -e " ${B_WHITE}URI Link :${NC} ${B_GREEN}hysteria2://${hy_pass}@${server_ip}:7122/?sni=bing.com&insecure=1#Hysteria2${NC}"
+            echo -e "${B_GOLD}==========================================================${NC}"
+            echo ""
+            read -n 1 -s -r -p "Press any key to return..."
+            ;;
+        4|04)
+            clear
+            echo -e "${B_GOLD}Opening Hysteria Config...${NC}"
+            nano /etc/hysteria/config.yaml
+            systemctl restart hysteria-server
+            ;;
+        5|05)
+            clear
+            echo -e "${B_GOLD}--- LIVE HYSTERIA 2 LOGS (Press Ctrl+C to exit) ---${NC}"
+            journalctl -u hysteria-server -n 50 --no-pager
+            echo ""
+            read -n 1 -s -r -p "Press any key to return..."
+            ;;
+        0|00)
+            break
+            ;;
+        *)
+            echo -e "${B_RED}Invalid option!${NC}"
+            sleep 1
+            ;;
+    esac
+done

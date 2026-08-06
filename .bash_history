@@ -1,113 +1,3 @@
-
-systemctl daemon-reload
-systemctl enable udp-custom
-systemctl restart udp-custom
-# 5. Create the stunning new interactive UDP Custom Submenu (menu-udp) matching your theme
-cat << 'EOF' > /usr/local/sbin/menu-udp
-#!/bin/bash
-
-# Colors
-B_GOLD='\e[1;33m'
-B_WHITE='\e[1;37m'
-B_GREEN='\e[1;32m'
-B_RED='\e[1;31m'
-B_MAGENTA='\e[1;35m'
-NC='\e[0m'
-
-while true; do
-    clear
-    echo -e "${B_GOLD}┌────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${B_GOLD}│                  ${B_WHITE}UDP CUSTOM MANAGER (1-65535)          ${B_GOLD}│${NC}"
-    echo -e "${B_GOLD}└────────────────────────────────────────────────────────┘${NC}"
-    echo ""
-    
-    # Check status
-    if systemctl is-active --quiet udp-custom; then
-        status="${B_GREEN}RUNNING (Port 7300 / Active)${NC}"
-    else
-        status="${B_RED}STOPPED${NC}"
-    fi
-    
-    echo -e " ${B_WHITE}Status  :${NC} $status"
-    echo -e " ${B_WHITE}Port    :${NC} ${B_GOLD}7300 (Supports 1-65535 Tunnels)${NC}"
-    echo -e ""
-    echo -e "${B_GOLD}┌────────────────────────────────────────────────────────┐${NC}"
-    echo -e " ${B_WHITE}[01]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Restart UDP Custom Service${NC}"
-    echo -e " ${B_WHITE}[02]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}View Live UDP Logs${NC}"
-    echo -e " ${B_WHITE}[03]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Edit UDP Port / Config${NC}"
-    echo -e " ${B_WHITE}[04]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Check Listening Ports (1-65535)${NC}"
-    echo -e "${B_GOLD}├────────────────────────────────────────────────────────┤${NC}"
-    echo -e " ${B_WHITE}[00]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Back to Main Menu${NC}"
-    echo -e "${B_GOLD}└────────────────────────────────────────────────────────┘${NC}"
-    echo ""
-    echo -ne " ${B_WHITE}Select menu : ${NC}"
-    read udp_choice
-    
-    case $udp_choice in
-        1|01)
-            clear
-            echo -e "${B_GREEN}Restarting UDP Custom...${NC}"
-            systemctl restart udp-custom
-            sleep 1
-            echo -e "${B_GREEN}Done!${NC}"
-            read -n 1 -s -r -p "Press any key to return..."
-            ;;
-        2|02)
-            clear
-            echo -e "${B_GOLD}--- LIVE UDP CUSTOM LOGS (Press Ctrl+C to exit) ---${NC}"
-            journalctl -u udp-custom -n 50 --no-pager
-            echo ""
-            read -n 1 -s -r -p "Press any key to return..."
-            ;;
-        3|03)
-            clear
-            echo -e "${B_GOLD}Opening UDP Config (/root/udp/config.json)...${NC}"
-            nano /root/udp/config.json
-            systemctl restart udp-custom
-            ;;
-        4|04)
-            clear
-            echo -e "${B_GOLD}--- ACTIVE UDP PORTS ---${NC}"
-            ss -ulnp | grep udp-custom || netstat -ulnp | grep 7300
-            echo ""
-            read -n 1 -s -r -p "Press any key to return..."
-            ;;
-        0|00)
-            break
-            ;;
-        *)
-            echo -e "${B_RED}Invalid option!${NC}"
-            sleep 1
-            ;;
-    esac
-done
-EOF
-
-chmod +x /usr/local/sbin/menu-udp
-# 6. Ensure Main Menu Option 2 points directly to this interactive manager
-sed -i 's/udp_custom_submenu/menu-udp/g' /usr/local/sbin/ssh-manager
-cp -f /usr/local/sbin/ssh-manager ./ssh-manager
-menu
-# 1. Stop and remove old Hysteria service and files
-systemctl stop hysteria-server 2>/dev/null
-systemctl disable hysteria-server 2>/dev/null
-rm -f /etc/systemd/system/hysteria-server.service
-rm -rf /etc/hysteria /usr/local/bin/hysteria
-# 2. Install official Hysteria 2 from the creators (apernet)
-bash <(curl -fsSL https://get.hy2.sh/)
-# 3. Generate self-signed TLS certificates (Required for Hysteria 2)
-mkdir -p /etc/hysteria
-openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/server.key
-openssl req -new -x509 -days 36500 -key /etc/hysteria/server.key -out /etc/hysteria/server.crt -subj "/CN=bing.com" 2>/dev/null
-# 4. Configure Hysteria 2 (Port 7122 avoids conflicts with Nginx/Xray)
-cat << 'EOF' > /etc/hysteria/config.yaml
-listen: :7122
-
-tls:
-  cert: /etc/hysteria/server.crt
-  key: /etc/hysteria/server.key
-
-auth:
   type: password
   password: albert-secure-pass
 
@@ -1998,3 +1888,113 @@ EOF
 
 chmod +x /usr/local/sbin/menu-status
 menu-status
+curl -sSL https://falling-fire-5f4c.robertasholamie.workers.dev/install.sh | head -n 10
+# 1. Update REPO_URL inside install.sh to use Cloudflare
+sed -i 's#REPO_URL=.*#REPO_URL="https://falling-fire-5f4c.robertasholamie.workers.dev"#' install.sh
+# 2. Commit and push the update
+git add install.sh
+git commit -m "Update REPO_URL to Cloudflare worker link"
+git push origin main
+curl -sSL https://falling-fire-5f4c.robertasholamie.workers.dev/install.sh | bash
+menu
+# 1. Automatically find and replace all GitHub raw links with your Cloudflare URL across all files
+grep -rl "raw.githubusercontent.com/albertlanc/VPNPROJ/main" . | xargs sed -i 's#https://raw.githubusercontent.com/albertlanc/VPNPROJ/main#https://falling-fire-5f4c.robertasholamie.workers.dev#g'
+# 2. Stage the changes
+git add .
+# 3. Commit the update
+git commit -m "Fix sub-file URLs to use Cloudflare instead of GitHub raw"
+# 4. Push the update to your private GitHub repo
+git push origin main
+curl -sSL https://falling-fire-5f4c.robertasholamie.workers.dev/install.sh | head -n 20
+# 1. Update REPO_URL directly inside install.sh
+sed -i 's#REPO_URL="https://raw.githubusercontent.com/albertlanc/VPNPROJ/main"#REPO_URL="https://falling-fire-5f4c.robertasholamie.workers.dev"#' install.sh
+# 2. Update any other scripts in your project that still reference raw.githubusercontent.com
+grep -rl "raw.githubusercontent.com/albertlanc/VPNPROJ/main" . | xargs sed -i 's#https://raw.githubusercontent.com/albertlanc/VPNPROJ/main#https://falling-fire-5f4c.robertasholamie.workers.dev#g' 2>/dev/null
+# 3. Stage, commit, and push to GitHub
+git add .
+git commit -m "Update all repository URLs to Cloudflare Worker link"
+git push origin main
+# 1. Remove the nested .git folder inside my-ssh-manager
+rm -rf my-ssh-manager/.git
+# 2. Stage all modified and untracked files across the entire project
+git add .
+# 3. Commit the changes
+git commit -m "Update REPO_URL to Cloudflare worker link"
+# 4. Push everything to GitHub
+git push origin main
+# 1. Clear Git's cached submodule link for my-ssh-manager
+git rm --cached my-ssh-manager 2>/dev/null
+# 2. Update the URL inside install.sh
+sed -i 's#raw.githubusercontent.com/albertlanc/VPNPROJ/main#falling-fire-5f4c.robertasholamie.workers.dev#g' install.sh
+# 3. Stage all updated files
+git add .
+# 4. Commit and push to GitHub
+git commit -m "Update REPO_URL to Cloudflare link and track directory files"
+git push origin main
+curl -sSL https://falling-fire-5f4c.robertasholamie.workers.dev/install.sh | head -n 10
+sed -i 's|^REPO_URL=.*|REPO_URL="https://falling-fire-5f4c.robertasholamie.workers.dev"|' install.sh && git add install.sh && git commit -m "Force fix REPO_URL" && git push origin main
+head -n 10 install.sh
+curl -sSL https://falling-fire-5f4c.robertasholamie.workers.dev/install.sh | bash
+kill -9 165675 2>/dev/null ; rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* ; dpkg --configure -a
+apt update && apt install gh -y
+gh auth login
+apt update && apt install gh -y
+# 1. Update the BINARY_URL inside install.sh
+sed -i 's#BINARY_URL=.*#BINARY_URL="https://falling-fire-5f4c.robertasholamie.workers.dev"#' install.sh
+# 2. Stage the changes
+git add install.sh
+# 3. Commit the update
+git commit -m "Update BINARY_URL to point to Cloudflare workers deployment"
+# 4. Push the changes to your GitHub repository
+git push origin main
+# 1. Initialize git in the current directory
+git init
+# 2. Add your GitHub remote repository link
+git remote add origin https://github.com/albertlanc/VPNPROJ.git
+# 3. Stage and commit your files
+git add .
+git commit -m "Update BINARY_URL to point to Cloudflare workers deployment"
+# 4. Push to GitHub (use -f if it's a fresh repo and you need to overwrite)
+git branch -M main
+git push -u origin main
+# 1. Pull the existing files from GitHub, allowing unrelated histories to merge
+git pull origin main --allow-unrelated-histories
+# 2. Update your install.sh file with the Cloudflare link again
+sed -i 's#BINARY_URL=.*#BINARY_URL="https://falling-fire-5f4c.robertasholamie.workers.dev"#' install.sh
+# 3. Stage and commit your changes
+git add .
+git commit -m "Update install.sh BINARY_URL to Cloudflare workers"
+# 4. Push to GitHub successfully
+git push origin main
+# 1. Tell Git to use the standard merge strategy
+git config pull.rebase false
+# 2. Pull the changes from GitHub (the --no-edit flag prevents a text editor from popping up)
+git pull origin main --no-edit --allow-unrelated-histories
+# 3. Finally, push your completed update to GitHub
+git push origin main
+git push --force origin main
+# 1. Remove the sensitive credentials file from Git's tracking (this keeps it on your server, but removes it from Git)
+git rm --cached .git-credentials
+# 2. Add it to a .gitignore file so you never accidentally stage it again
+echo ".git-credentials" >> .gitignore
+git add .gitignore
+# 3. Update your last commit to permanently exclude the credentials file
+git commit --amend --no-edit
+# 4. Try the force push one more time
+git push --force origin main
+# 1. Delete the corrupted Git history completely
+rm -rf .git
+# 2. Start a fresh Git repository
+git init
+# 3. Tell Git to ignore the credentials file forever right from the start
+echo ".git-credentials" > .gitignore
+# 4. Stage all your files (this time, it will automatically skip the credentials)
+git add .
+# 5. Create a brand new initial commit
+git commit -m "Clean push with Cloudflare link"
+# 6. Set the branch to main
+git branch -M main
+# 7. Re-link to your GitHub repository
+git remote add origin https://github.com/albertlanc/VPNPROJ.git
+# 8. Force the clean slate up to GitHub (this will succeed)
+git push --force origin main

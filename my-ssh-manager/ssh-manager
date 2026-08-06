@@ -1,627 +1,111 @@
 #!/bin/bash
 
-settings_submenu() {
+# Sub-menu function for Option 1 (SSH & User Management)
+ssh_submenu() {
     while true; do
         clear
-        echo -e "$BORDER"
-        echo -e "${B_YELLOW}             SYSTEM SETTINGS MANAGER             ${NC}"
-        echo -e "$BORDER"
-        echo -e " ${B_WHITE}[01]${NC} ${B_CYAN}•${NC} ${B_GREEN}Speedtest VPS${NC}"
-        echo -e " ${B_WHITE}[02]${NC} ${B_CYAN}•${NC} ${B_GREEN}Info Port${NC}"
-        echo -e " ${B_WHITE}[03]${NC} ${B_CYAN}•${NC} ${B_GREEN}Set Auto Reboot (Interval)${NC}"
-        echo -e " ${B_WHITE}[04]${NC} ${B_CYAN}•${NC} ${B_GREEN}Set Auto Reboot (Specific Time)${NC}"
-        echo -e " ${B_WHITE}[05]${NC} ${B_CYAN}•${NC} ${B_GREEN}View Server Reboot Log${NC}"
-        echo -e " ${B_WHITE}[06]${NC} ${B_CYAN}•${NC} ${B_GREEN}Restart All Services${NC}"
-        echo -e " ${B_WHITE}[07]${NC} ${B_CYAN}•${NC} ${B_GREEN}Change Banner${NC}"
-        echo -e " ${B_WHITE}[08]${NC} ${B_CYAN}•${NC} ${B_GREEN}Check Bandwidth${NC}"
-        echo -e " ${B_WHITE}[09]${NC} ${B_CYAN}•${NC} ${B_GREEN}Server Health Check${NC}"
-        echo -e " ${B_WHITE}[10]${NC} ${B_CYAN}•${NC} ${B_GREEN}SlowDNS Key Manager (New!)${NC}"
-        echo -e " ${B_WHITE}[11]${NC} ${B_CYAN}•${NC} ${B_GREEN}Pull Updates from Vault (OTA)${NC}"
-        echo -e " ${B_WHITE}[12]${NC} ${B_CYAN}•${NC} ${B_GREEN}Toggle OpenVPN (ON/OFF) (RAM Saver)${NC}"
-        echo -e "$BORDER"
-    echo -e " ${B_WHITE}[14]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Active SSH Users Monitor${NC}"
-        echo -e " ${B_WHITE}[00]${NC} ${B_CYAN}•${NC} ${B_GREEN}Back to Main Menu${NC}"
-        echo -e "$BORDER"
-        echo -ne " ${B_GREEN}Select menu : ${NC}"
-        read set_choice
-        case $set_choice in
-            1|01) clear; speedtest || speedtest-cli; read -n 1 -s -r -p "Press any key..." ;;
-            2|02) clear; echo -e "Ports info..."; read -n 1 -s -r -p "Press any key..." ;;
-            3|03) clear; echo -e "Auto reboot interval..."; read -n 1 -s -r -p "Press any key..." ;;
-            4|04) clear; echo -e "Auto reboot time..."; read -n 1 -s -r -p "Press any key..." ;;
-            5|05) clear; [ -f /var/log/syslog ] && grep -i reboot /var/log/syslog | tail -n 20 || uptime; read -n 1 -s -r -p "Press any key..." ;;
-            6|06) clear; systemctl restart ssh dropbear xray nginx 2>/dev/null; echo -e "Services restarted!"; read -n 1 -s -r -p "Press any key..." ;;
-            7|07) clear; echo -e "Banner configuration..."; read -n 1 -s -r -p "Press any key..." ;;
-            8|08) clear; if command -v vnstat &>/dev/null; then vnstat; else echo "vnstat not installed"; fi; read -n 1 -s -r -p "Press any key..." ;;
-            9|09) clear; top -b -n 1 | head -n 20; read -n 1 -s -r -p "Press any key..." ;;
-            10|10) clear; echo -e "SlowDNS Key Manager..."; read -n 1 -s -r -p "Press any key..." ;;
-            11|11) clear; echo -e "Pulling updates..."; read -n 1 -s -r -p "Press any key..." ;;
-            12|12) clear; echo -e "Toggle OpenVPN..."; read -n 1 -s -r -p "Press any key..." ;;
-        14|014)
-            clear
-            menu-ssh-active
-            ;;
-            0|00) break ;;
-            *) clear; echo -e "[!] Invalid option."; sleep 1 ;;
+        echo -e "\E[0;36m===================================================\E[0m"
+        echo -e "\E[0;33m          SSH & USER MANAGEMENT MENU               \E[0m"
+        echo -e "\E[0;36m===================================================\E[0m"
+        echo -e " [1]  Create SSH / VPN Account"
+        echo -e " [2]  Create Trial Account"
+        echo -e " [3]  Delete User"
+        echo -e " [4]  Renew User Expiration"
+        echo -e " [5]  Check User Login Status"
+        echo -e " [6]  Member User List"
+        echo -e " [7]  Kill Multi-Login Users"
+        echo -e " [8]  Set Auto-Delete Expired Users"
+        echo -e " [9]  User Backup"
+        echo -e " [10] User Restore"
+        echo -e " [11] Webmin Management"
+        echo -e " [12] Show OpenVPN Config"
+        echo -e " [13] Modify SSH Login Limit"
+        echo -e " [0]  Back to Main Menu"
+        echo -e "\E[0;36m===================================================\E[0m"
+        read -p "Select an option [0-13]: " sub_choix
+
+        case $sub_choix in
+            1)
+                clear
+                if command -v add-ssh &>/dev/null; then
+                    add-ssh
+                else
+                    echo -e "\E[1;31m[!] add-ssh script not found.\E[0m"
+                fi
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            2)
+                clear
+                echo -e "\E[0;33m--- Create Trial Account ---\E[0m"
+                # Add your trial logic here
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            12)
+                clear
+                echo -e "\E[0;33m--- OpenVPN Configuration ---\E[0m"
+                # Add your openvpn display code here
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            13)
+                clear
+                echo -e "\E[0;33m--- Modify SSH Login Limit ---\E[0m"
+                # Add your login limit code here
+                read -n 1 -s -r -p "Press any key to continue..."
+                ;;
+            0)
+                break
+                ;;
+            *)
+                echo -e "\E[1;31m[!] Invalid option.\E[0m"
+                sleep 1
+                ;;
         esac
     done
 }
 
-
-
-server_ip=$(curl -sS ipv4.icanhazip.com 2>/dev/null || hostname -I | awk '{print $1}')
-license_data=$(curl -s "$authorized_url")
-matched_line=$(echo "$license_data" | grep "^$server_ip:")
-
-client_name="Unknown"
-exp_date="N/A"
-days_left="Expired"
-
-    if [ -n "$matched_line" ]; then
-        exp_date=$(echo "$matched_line" | cut -d':' -f2)
-        client_name=$(echo "$matched_line" | cut -d':' -f3)
-        
-        # If no name is provided in the file, default to showing the IP
-        [ -z "$client_name" ] && client_name="$server_ip"
-        
-current_epoch=$(date +%b)
-exp_epoch=$(date -d "$exp_date" +%b 2>/dev/null || date -jf "%Y-%m-%d" "$exp_date" +%b 2>/dev/null)
-        
-        if [ -n "$exp_epoch" ]; then
-            local diff=$((exp_epoch - current_epoch))
-            local days=$((diff / 86400))
-            if [ $days -ge 0 ]; then
-                days_left="$days Days"
-            fi
-        fi
-    fi
-
-    echo -e "${S_CYAN}┌────────────────────────────────────────────────────────┐${S_NC}"
-    echo -e "${S_CYAN}│${S_YEL}                  LICENSE INFORMATION                   ${S_CYAN}│${S_NC}"
-    echo -e "${S_CYAN}└────────────────────────────────────────────────────────┘${S_NC}"
-    echo -e "  ${S_GRN}Client      : ${S_NC}$client_name"
-    echo -e "  ${S_GRN}Expiry Date : ${S_NC}$exp_date"
-    echo -e "  ${S_GRN}Days Left   : ${S_NC}$days_left"
-    echo ""
-# --- DATE-BASED IP LICENSE VERIFICATION ---
-get_license_days() {
-    local server_ip=$(curl -sS ipv4.icanhazip.com 2>/dev/null || hostname -I | awk '{print $1}')
-    local license_data=$(curl -s "$authorized_url")
-    local matched_line=$(echo "$license_data" | grep "^$server_ip:")
-
-    if [ -z "$matched_line" ]; then
-        echo "Unlicensed"
-        return
-    fi
-
-    local exp_date=$(echo "$matched_line" | cut -d':' -f2)
-    local current_epoch=$(date +%b)
-    local exp_epoch=$(date -d "$exp_date" +%b 2>/dev/null || date -jf "%Y-%m-%d" "$exp_date" +%b 2>/dev/null)
-
-    if [ -z "$exp_epoch" ]; then
-        echo "Active"
-        return
-    fi
-
-    local diff=$((exp_epoch - current_epoch))
-    local days=$((diff / 86400))
-
-    if [ $days -lt 0 ]; then
-        echo "Expired"
-    else
-        echo "$days Days Remaining ($exp_date)"
-    fi
-}
-AUTHORIZED_URL="https://falling-fire-5f4c.robertasholamie.workers.dev/licensed-ips.txt"
-SERVER_IP=$(curl -sS ipv4.icanhazip.com 2>/dev/null || hostname -I | awk '{print $1}')
-
-LICENSE_DATA=$(curl -s "$AUTHORIZED_URL")
-MATCHED_LINE=$(echo "$LICENSE_DATA" | grep "^$SERVER_IP:")
-
-if [ -z "$MATCHED_LINE" ]; then
-    echo -e "\033[31m====================================================\033[0m"
-    echo -e "\033[31m [!] ACCESS DENIED: IP Address ($SERVER_IP) Not Licensed. \033[0m"
-    echo -e "\033[31m====================================================\033[0m"
-    exit 1
-fi
-
-# Extract expiration date (format: IP:YYYY-MM-DD)
-EXP_DATE=$(echo "$MATCHED_LINE" | cut -d':' -f2)
-CURRENT_DATE=$(date +%Y-%m-%d)
-
-if [[ "$CURRENT_DATE" > "$EXP_DATE" ]]; then
-    echo -e "\033[31m====================================================\033[0m"
-    echo -e "\033[31m [!] LICENSE EXPIRED on $EXP_DATE. Please renew.      \033[0m"
-    echo -e "\033[31m====================================================\033[0m"
-    exit 1
-fi
-# ------------------------------------------
-# --- COLOR DEFINITIONS (SUBMENU) ---
-B_BLUE='\e[1;34m'
-B_CYAN='\e[1;35m'
-B_GREEN='\e[1;37m'
-B_YELLOW='\e[1;33m'
-B_WHITE='\e[1;37m'
-B_RED='\e[1;31m'
-NC='\e[0m'
-BORDER="${B_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-S_BORDER="${B_CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-# --- SUB MENU (SSH & USER MANAGEMENT) (UNTOUCHED) ---
-ssh_submenu() {
-    while true; do
-        clear
-        echo -e "$BORDER"
-        echo -e "${B_YELLOW}               SSH & USER MANAGEMENT MENU                ${NC}"
-        echo -e "$BORDER"
-        echo -e " ${B_WHITE}[01]${NC} ${B_CYAN}•${NC} ${B_GREEN}Create SSH / VPN Account${NC}"
-        echo -e " ${B_WHITE}[02]${NC} ${B_CYAN}•${NC} ${B_GREEN}Create Trial Account${NC}"
-        echo -e " ${B_WHITE}[03]${NC} ${B_CYAN}•${NC} ${B_GREEN}Create Timed SSH Account${NC}"
-        echo -e " ${B_WHITE}[04]${NC} ${B_CYAN}•${NC} ${B_GREEN}Renew SSH Account${NC}"
-        echo -e " ${B_WHITE}[05]${NC} ${B_CYAN}•${NC} ${B_GREEN}Delete SSH Account${NC}"
-        echo -e " ${B_WHITE}[06]${NC} ${B_CYAN}•${NC} ${B_GREEN}Check User Login Status${NC}"
-        echo -e " ${B_WHITE}[07]${NC} ${B_CYAN}•${NC} ${B_GREEN}Member User List${NC}"
-        echo -e " ${B_WHITE}[08]${NC} ${B_CYAN}•${NC} ${B_GREEN}Kill Multi-Login Users${NC}"
-        echo -e " ${B_WHITE}[09]${NC} ${B_CYAN}•${NC} ${B_GREEN}Set Auto-Delete Expired Users${NC}"
-        echo -e " ${B_WHITE}[10]${NC} ${B_CYAN}•${NC} ${B_GREEN}User Backup${NC}"
-        echo -e " ${B_WHITE}[11]${NC} ${B_CYAN}•${NC} ${B_GREEN}User Restore${NC}"
-        echo -e " ${B_WHITE}[12]${NC} ${B_CYAN}•${NC} ${B_GREEN}Show OpenVPN Config${NC}"
-        echo -e " ${B_WHITE}[13]${NC} ${B_CYAN}•${NC} ${B_GREEN}Modify SSH Login Limit${NC}"
-    echo -e " ${B_WHITE}[14]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Active SSH Users Monitor${NC}"
-        echo -e " ${B_WHITE}[00]${NC} ${B_CYAN}•${NC} ${B_GREEN}Back to Main Menu${NC}"
-        echo -e "$BORDER"
-        echo -ne " ${B_CYAN}Select an option [0-14]: ${NC}"
-        read sub_choix
-        case $sub_choix in
-        1|01) clear; usernew 2>/dev/null || echo -e "\n[!] Command 'usernew' missing."; read -n 1 -s -r ;;
-        2|02) clear; trial ;;
-        3|03) clear; add-ssh 2>/dev/null || echo -e "\n[!] Command missing."; read -n 1 -s -r ;;
-        4|04) clear; renew 2>/dev/null || echo -e "\n[!] Command 'renew' missing."; read -n 1 -s -r ;;
-        5|05) clear; hapus 2>/dev/null || deluser 2>/dev/null || echo -e "\n[!] Command 'hapus' missing."; read -n 1 -s -r ;;
-        7|07) clear; member 2>/dev/null || echo -e "\n[!] Command 'member' missing."; read -n 1 -s -r ;;
-        10) clear; backup 2>/dev/null || echo -e "\n[!] Command 'backup' missing."; read -n 1 -s -r ;;
-        11) clear; restore 2>/dev/null || echo -e "\n[!] Command 'restore' missing."; read -n 1 -s -r ;;
-        12) clear; menu-ovpn 2>/dev/null || ovpn 2>/dev/null || echo -e "\n[!] Command 'ovpn' missing."; read -n 1 -s -r ;;
-        13) clear; limit 2>/dev/null || limit-ssh 2>/dev/null || echo -e "\n[!] Command 'limit' missing."; read -n 1 -s -r ;;
-        14|014)
-            clear
-            menu-ssh-active
-            ;;
-        0|00) clear; menu ;;
-        *) clear; echo -e "\n[!] Invalid option."; sleep 1; menu ;;
-    esac
-    done
-}
-
-# --- VMESS SUBMENU (WITH AUTOMATIC DATABASE INJECTION) ---
-vmess_submenu() {
-    while true; do
-        clear
-        echo -e "$BORDER"
-        echo -e "${B_YELLOW}                 XRAY VMESS MANAGER                ${NC}"
-        echo -e "$BORDER"
-        echo -e " ${B_WHITE}[01]${NC} ${B_CYAN}•${NC} ${B_GREEN}Create VMess Account${NC}"
-        echo -e " ${B_WHITE}[02]${NC} ${B_CYAN}•${NC} ${B_GREEN}Create Trial Account${NC}"
-        echo -e " ${B_WHITE}[03]${NC} ${B_CYAN}•${NC} ${B_GREEN}Create Timed VMess (Mins)${NC}"
-        echo -e " ${B_WHITE}[04]${NC} ${B_CYAN}•${NC} ${B_GREEN}Extend VMess Account${NC}"
-        echo -e " ${B_WHITE}[05]${NC} ${B_CYAN}•${NC} ${B_GREEN}Delete VMess Account${NC}"
-        echo -e " ${B_WHITE}[06]${NC} ${B_CYAN}•${NC} ${B_GREEN}Check User Login${NC}"
-        echo -e " ${B_WHITE}[07]${NC} ${B_CYAN}•${NC} ${B_GREEN}List VMess Members${NC}"
-        echo -e " ${B_WHITE}[08]${NC} ${B_CYAN}•${NC} ${B_GREEN}Clean Expired Users (Manual)${NC}"
-        echo -e "$BORDER"
-    echo -e " ${B_WHITE}[14]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Active SSH Users Monitor${NC}"
-        echo -e " ${B_WHITE}[00]${NC} ${B_CYAN}•${NC} ${B_GREEN}Back to Main Menu${NC}"
-        echo -e "$BORDER"
-        echo -ne " ${B_GREEN}Select menu : ${NC}"
-        read v_choix
-        case $v_choix in
-            13|13)
-                settings_submenu
-                ;;
-            15|15)
-                clear
-                exit 0
-                ;;
-            4|04)
-                menu-domain
-                ;;
-            
-            
-            1|01)
-                clear
-                echo -e "$S_BORDER"
-                echo -e "${B_YELLOW}               CREATE VMESS ACCOUNT                ${NC}"
-                echo -e "$S_BORDER"
-                read -p " Username : " v_user
-                read -p " Expired (Days) : " v_days
-                v_days=${v_days:-30}
-                v_uuid=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || uuidgen)
-                DOMAIN="te.gregsmarty.co.uk"
-                exp_date=$(date -d "+$v_days days" +"%b %d, %Y" 2>/dev/null || date -v+${v_days}d +"%b %d, %Y")
-                
-                python3 /usr/local/bin/vmess_manager.py add "$v_user" "$v_uuid"
-                systemctl restart xray
-
-                json_tls="{"v":"2","ps":"${v_user}-TLS","add":"${DOMAIN}","port":"443","id":"${v_uuid}","aid":"0","net":"ws","type":"none","host":"${DOMAIN}","path":"/vmess","tls":"tls"}"
-                link_tls="vmess://$(echo -n "$json_tls" | base64 -w 0 2>/dev/null || echo -n "$json_tls" | base64)"
-
-                json_upgrade="{"v":"2","ps":"${v_user}-HTTP-UPGRADE","add":"${DOMAIN}","port":"8880","id":"${v_uuid}","aid":"0","net":"ws","type":"none","host":"${DOMAIN}","path":"/vmess","tls":""}"
-                link_upgrade="vmess://$(echo -n "$json_upgrade" | base64 -w 0 2>/dev/null || echo -n "$json_upgrade" | base64)"
-
-                json_nointls="{"v":"2","ps":"${v_user}-NO-TLS","add":"${DOMAIN}","port":"80","id":"${v_uuid}","aid":"0","net":"ws","type":"none","host":"${DOMAIN}","path":"/vmess","tls":""}"
-                link_nointls="vmess://$(echo -n "$json_nointls" | base64 -w 0 2>/dev/null || echo -n "$json_nointls" | base64)"
-
-                clear
-                echo -e "$S_BORDER"
-                echo -e "${B_YELLOW}              VMESS ACCOUNT CREATED                ${NC}"
-                echo -e "$S_BORDER"
-                echo -e " ${B_GREEN}Remarks     ${NC} : ${B_WHITE}$v_user${NC}"
-                echo -e " ${B_GREEN}Domain      ${NC} : ${B_WHITE}$DOMAIN${NC}"
-                echo -e " ${B_GREEN}User ID     ${NC} : ${B_WHITE}$v_uuid${NC}"
-                echo -e " ${B_GREEN}Expired On  ${NC} : ${B_WHITE}$exp_date${NC}"
-                echo -e "$S_BORDER"
-                echo -e "${B_YELLOW}LINK TLS (Cloudflare/Standard) :${NC}"
-                echo -e "${B_GREEN}$link_tls${NC}"
-                echo -e "$S_BORDER"
-                echo -e "${B_YELLOW}LINK HTTP-UPGRADE :${NC}"
-                echo -e "${B_GREEN}$link_upgrade${NC}"
-                echo -e "$S_BORDER"
-                echo -e "${B_YELLOW}LINK NO-TLS (Port 80) :${NC}"
-                echo -e "${B_GREEN}$link_nointls${NC}"
-                echo -e "$S_BORDER"
-                echo -ne "
- ${B_WHITE}Press any key to back on menu...${NC}"; read -n 1 -s -r
-                ;;
-                        2|02)
-                clear
-                echo -e "$BORDER"
-                echo -e "${B_YELLOW}                 SYSTEM PORTS & INFO                 ${NC}"
-                echo -e "$BORDER"
-                echo -e " ${B_CYAN}>> Service & Port List${NC}"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "OpenSSH" "22"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Dropbear" "109, 143"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Stunnel4" "447, 777"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "SSH-WS (HTTP)" "80"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Custom SSH (HTTP)" "8880"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Xray VLESS TLS" "443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Xray VMess TLS" "443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Xray Trojan TLS" "443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Nginx Multiplexer" "81, 443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "SlowDNS (DNSTT)" "53, 5300"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "BadVPN UDPGW" "7300"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "SOCKS5 Proxy" "1080"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "HTTP Proxy" "8080"
-                echo -e "$BORDER"
-                echo -e " ${B_CYAN}>> Server Status${NC}"
-                
-                server_ip=$(curl -s https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
-                dom=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
-                tz=$(timedatectl 2>/dev/null | grep "Time zone" | awk '{print $3}' || echo "UTC")
-                if crontab -l 2>/dev/null | grep -q "reboot"; then
-                    reboot_status="[ACTIVE]"
-                else
-                    reboot_status="[INACTIVE]"
-                fi
-
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "IP Address" "$server_ip"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Domain" "$dom"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Timezone" "$tz"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Auto-Reboot" "$reboot_status"
-                echo -e "$BORDER"
-                echo -ne " ${B_WHITE}Press any key to return...${NC}"; read -n 1 -s -r
-                ;;
-            3|03)
-                menu-hysteria
-                ;;
-                        
-                    14|14)
-                clear; menu-running;;
-    esac
-    done
-}
-
-# --- EXACT SCREENSHOT DESIGN DASHBOARD WITH REAL-TIME CLOCK & FIXED SPEEDTEST ---
+# Main Application Loop
 while true; do
     clear
+    echo -e "\E[0;36m===================================================\E[0m"
+    echo -e "\E[0;33m             LIGHTWEIGHT VPN MANAGER               \E[0m"
+    echo -e "\E[0;36m===================================================\E[0m"
+    echo -e "Server IP : $(curl -sS ipv4.icanhazip.com || hostname -I | awk '{print $1}')"
+    echo -e "OS        : $(grep -oP 'PRETTY_NAME="\K[^"]+' /etc/os-release 2>/dev/null || echo "Linux")"
+    echo -e "\E[0;36m===================================================\E[0m"
+    echo -e " [1] SSH & User Management Sub-menu"
+    echo -e " [2] Add Xray User (VMess / VLESS)"
+    echo -e " [3] Restart All Services"
+    echo -e " [4] Check Service Status"
+    echo -e " [0] Exit Menu"
+    echo -e "\E[0;36m===================================================\E[0m"
+    read -p "Select an option: " choix
 
-    # Screenshot Color Palette
-    S_CYAN='\e[1;35m'
-    S_WHT='\e[1;37m'
-    S_GRN='\e[1;37m'
-    S_YEL='\e[1;33m'
-    S_RED='\e[1;31m'
-    S_NC='\e[0m'
-
-    # Fetch live server details (Real-time clock using date command)
-    os_ver=$(grep -oP 'PRETTY_NAME="\K[^"]+' /etc/os-release 2>/dev/null || echo "Ubuntu 24.04.4 LTS")
-    domain="te.gregsmarty.co.uk"
-    curr_time=$(date +"%Y-%m-%d %H:%M:%S")
-    connected_users=$(who | wc -l)
-
-    # Check Service Status strictly
-    chk_svc() {
-        if systemctl is-active --quiet "$1" 2>/dev/null; then
-            echo -e "${S_GRN}● \033[1;32mONLINE\033[0m${S_NC}"
-        else
-            echo -e "${S_RED}■ OFFLINE${S_NC}"
-        fi
-    }
-    
-    ssh_st=$(chk_svc sshd)
-    if [[ "$ssh_st" == *OFFLINE* ]]; then ssh_st=$(chk_svc ssh); fi
-    nginx_st=$(chk_svc nginx)
-    xray_st=$(chk_svc xray)
-    dropbear_st=$(chk_svc dropbear)
-
-    # 0. SCRIPTED & PROGRAMMED BY HEADER
-    echo -e "\e[1;33mScripted & Programmed By \e[1;35mAlbert \e[1;37mTech \e[1;35mInc\e[0m"
-    echo ""
-
-    # 0.5. LICENSE INFORMATION BOX
-    echo -e "${S_CYAN}┌────────────────────────────────────────────────────────┐${S_NC}"
-    echo -e "${S_CYAN}│${S_YEL}                  LICENSE INFORMATION                   ${S_CYAN}│${S_NC}"
-    echo -e "${S_CYAN}└────────────────────────────────────────────────────────┘${S_NC}"
-    echo -e "  ${S_GRN}Client      : ${S_NC}albert"
-    echo -e "  ${S_GRN}Expiry Date : ${S_NC}2026-09-05"
-    echo -e "  ${S_GRN}Days Left   : ${S_NC}30 Days"
-    echo ""
-    # 1. SYSTEM INFO BOX
-
-    echo -e "${S_CYAN}┌────────────────────────────────────────────────────────┐${S_NC}"
-    echo -e "${S_CYAN}│                      SYSTEM INFO                       │${S_NC}"
-    echo -e "${S_CYAN}├────────────────────────────────────────────────────────┤${S_NC}"
-    printf "${S_CYAN}│${S_NC} ${S_GRN}OS:${S_NC}          %-41s ${S_CYAN}│${S_NC}\n" "$os_ver"
-    printf "${S_CYAN}│${S_NC} ${S_GRN}Domain:${S_NC}      ${S_YEL}%-41s${S_NC} ${S_CYAN}│${S_NC}\n" "$domain"
-    printf "${S_CYAN}│${S_NC} ${S_GRN}Name Server:${S_NC} ${S_WHT}%-41s${S_NC} ${S_CYAN}│${S_NC}\n" "ns-te.gregsmarty.co.uk"
-    printf "${S_CYAN}│${S_NC} ${S_GRN}Time:${S_NC}        ${S_WHT}%-41s${S_NC} ${S_CYAN}│${S_NC}\n" "$curr_time"
-    printf "${S_CYAN}│${S_NC} ${S_GRN}Users:${S_NC}       ${S_YEL}%-41s${S_NC} ${S_CYAN}│${S_NC}\n" "$connected_users Connected"
-    echo -e "${S_CYAN}└────────────────────────────────────────────────────────┘${S_NC}"
-    echo ""
-
-    # 2. SERVICES MATRIX BOX
-    echo -e "${S_CYAN}┌────────────────────────────────────────────────────────┐${S_NC}"
-    echo -e "${S_CYAN}│                    SERVICES MATRIX                     │${S_NC}"
-    echo -e "${S_CYAN}├────────────────────────────────────────────────────────┤${S_NC}"
-        # Real-time Status & Active Connections Matrix
-        ssh_sts=$(systemctl is-active --quiet ssh && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        xray_sts=$(systemctl is-active --quiet xray && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        nginx_sts=$(systemctl is-active --quiet nginx && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        dropbear_sts=$(systemctl is-active --quiet dropbear && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        udp_sts=$(systemctl is-active --quiet hysteria && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        ssh_act=$(netstat -anp 2>/dev/null | grep ESTABLISHED | grep -w "sshd" | wc -l)
-        xray_act=$(netstat -anp 2>/dev/null | grep ESTABLISHED | grep -w "xray" | wc -l)
-        udp_act=$(netstat -anp 2>/dev/null | grep -w "hysteria" | grep -v "LISTEN" | wc -l)
-        # Real-time Status & Active Connections Matrix
-        ssh_sts=$(systemctl is-active --quiet ssh && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        xray_sts=$(systemctl is-active --quiet xray && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        nginx_sts=$(systemctl is-active --quiet nginx && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        dropbear_sts=$(systemctl is-active --quiet dropbear && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        ssh_act=$(netstat -anp 2>/dev/null | grep ESTABLISHED | grep -w "sshd" | wc -l)
-        xray_act=$(netstat -anp 2>/dev/null | grep ESTABLISHED | grep -w "xray" | wc -l)
-        # Real-time Status & Active Connections Matrix
-        ssh_sts=$(systemctl is-active --quiet ssh && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        xray_sts=$(systemctl is-active --quiet xray && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        nginx_sts=$(systemctl is-active --quiet nginx && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        dropbear_sts=$(systemctl is-active --quiet dropbear && echo -e "${B_GREEN}● \033[1;32mONLINE\033[0m${NC}" || echo -e "${B_RED}○ OFFLINE${NC}")
-        ssh_act=$(netstat -anp 2>/dev/null | grep ESTABLISHED | grep -w "sshd" | wc -l)
-        xray_act=$(netstat -anp 2>/dev/null | grep ESTABLISHED | grep -w "xray" | wc -l)
-        echo -e " SSH Service : $ssh_sts (${B_WHITE}${ssh_act:-0}${NC})    XRAY Core  : $xray_sts (${B_WHITE}${xray_act:-0}${NC})"
-        echo -e " NGINX Proxy : $nginx_sts        Dropbear   : $dropbear_sts"
-    echo -e "${S_CYAN}└────────────────────────────────────────────────────────┘${S_NC}"
-    echo ""
-
-
-    
-    
-    echo -e "\e[1;33m┌────────────────────────────────────────────────────────┐\e[0m"
-    echo -e "\e[1;33m│                       \e[1;37mMAIN MENU                        \e[1;33m│\e[0m"
-    echo -e "\e[1;33m└────────────────────────────────────────────────────────┘\e[0m"
-echo -e "\e[1;37m"
-    echo -e "\e[1;33m┌────────────────────────────────────────────────────────┐\e[0m"
-    printf " │ %2d %-50s │
-" 1 "SSH & OpenVPN MENU"
-    printf " │ %2d %-50s │
-" 2 "UDP CUSTOM MENU"
-    printf " │ %2d %-50s │
-" 3 "HYSTERIA MENU"
-    printf " │ %2d %-50s │
-" 4 "DOMAIN & SSL"
-    printf " │ %2d %-50s │
-" 5 "WIREGUARD MENU"
-    printf " │ %2d %-50s │
-" 6 "SHADOWSOCKS MENU"
-    printf " │ %2d %-50s │
-" 7 "SHADOWSOCKSR MENU"
-    printf " │ %2d %-50s │
-" 8 "VMESS MENU"
-    printf " │ %2d %-50s │
-" 9 "VLESS MENU"
-    printf " │ %2d %-50s │
-" 10 "TROJAN GFW MENU"
-    printf " │ %2d %-50s │
-" 11 "TROJAN GO MENU"
-    printf " │ %2d %-50s │
-" 12 "SPEED TEST"
-    printf " │ %2d %-50s │
-" 13 "Settings"
-    printf " │ %2d %-50s │
-" 14 "Check Running"
-    printf " │ %2d %-50s │
-" 15 "Exit"
-    echo -e "\e[1;33m└────────────────────────────────────────────────────────┘\e[0m"
-echo -e "\e[1;37m"
-    echo -e "\e[1;33m┌────────────────────────────────────────────────────────┐\e[0m"
-    echo -e " │            Select From Options [ 1 - 15 ]              │"
-    echo -e "\e[1;33m└────────────────────────────────────────────────────────┘\e[0m"
-echo -e "\e[1;37m"
-
-    # Live Bandwidth Calculation using vnstat
-    interface=$(ip route show default | awk '/default/ {print $5}' | head -n1)
-    if ! command -v vnstat &> /dev/null; then
-        B_TODAY="0.00 MiB"
-        B_YEST="0.00 MiB"
-        B_MONTH="0.00 MiB"
-    else
-        T_DATE=$(date +"%Y-%m-%d")
-        Y_DATE=$(date -d "yesterday" +"%Y-%m-%d")
-        M_DATE=$(date +"%Y-%m")
-        
-        # vnstat 2.x extraction (Quote-safe)
-        B_TODAY=$(vnstat -d -i "$interface" 2>/dev/null | awk -v d="$T_DATE" '$0 ~ d {print $8" "$9}')
-        B_YEST=$(vnstat -d -i "$interface" 2>/dev/null | awk -v d="$Y_DATE" '$0 ~ d {print $8" "$9}')
-        B_MONTH=$(vnstat -m -i "$interface" 2>/dev/null | awk -v d="$M_DATE" '$0 ~ d {print $8" "$9}')
-        
-        # vnstat 1.x fallback
-        [ -z "$B_TODAY" ] && B_TODAY=$(vnstat -d -i "$interface" 2>/dev/null | grep -iw "today" | awk '{print $8" "$9}')
-        [ -z "$B_YEST" ] && B_YEST=$(vnstat -d -i "$interface" 2>/dev/null | grep -iw "yesterday" | awk '{print $8" "$9}')
-        
-        # Final empty safeguards
-        [ -z "$B_TODAY" ] && B_TODAY="0.00 MiB"
-        [ -z "$B_YEST" ] && B_YEST="0.00 MiB"
-        [ -z "$B_MONTH" ] && B_MONTH="0.00 MiB"
-    fi
-
-    # Render UI Block
-    echo -e "├────────────────────────────────────────────────────────┤"
-    echo -e "│${B_YELLOW}                  MONITORING BANDWIDTH                  ${NC}│"
-    echo -e "├────────────────────────────────────────────────────────┤"
-    printf "│  ${B_GREEN}%-28s${NC}= ${B_GREEN}%-24s${NC}│\n" "BANDWIDTH USED TODAY" "$B_TODAY"
-    printf "│  ${B_GREEN}%-28s${NC}= ${B_GREEN}%-24s${NC}│\n" "BANDWIDTH USED YESTERDAY" "$B_YEST"
-    printf "│  ${B_GREEN}%-28s${NC}= ${B_GREEN}%-24s${NC}│\n" "TOTAL BANDWIDTH THIS MONTH" "$B_MONTH"
-    echo -e "\e[1;33m└────────────────────────────────────────────────────────┘\e[0m"
-echo -e "\e[1;37m"
-    echo -e ""
-    echo -ne " ${B_GREEN}Select menu : ${NC}"
-    read choix
-    
     case $choix in
-        6|06) clear; menu-shadowsocks ;;
-        7|07) clear; menu-ssr ;;
-        5|05) clear; menu-wireguard ;;
-        11|011) clear; trojan-go-menu ;;
-        12|012) clear; echo -e "\n=== SPEEDTEST ==="; speedtest; echo -ne "\nPress any key to return..."; read -n 1 -s -r ;;
-            13|13)
-                settings_submenu
-                ;;
-            15|15)
-                clear
-                exit 0
-                ;;
-            4|04)
-                menu-domain
-                ;;
-            
-            
-        1|01) ssh_submenu ;;
-        2|02) clear; clear; menu-udp ;;
-        3|03) clear; menu-hysteria ;;
-                    999|0999)
-                clear
-                echo -e "$BORDER"
-                echo -e "${B_YELLOW}                 SYSTEM PORTS & INFO                 ${NC}"
-                echo -e "$BORDER"
-                echo -e " ${B_CYAN}>> Service & Port List${NC}"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "OpenSSH" "22"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Dropbear" "109, 143"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Stunnel4" "447, 777"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "SSH-WS (HTTP)" "80"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Custom SSH (HTTP)" "8880"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Xray VLESS TLS" "443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Xray VMess TLS" "443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Xray Trojan TLS" "443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Nginx Multiplexer" "81, 443"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "SlowDNS (DNSTT)" "53, 5300"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "BadVPN UDPGW" "7300"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "SOCKS5 Proxy" "1080"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "HTTP Proxy" "8080"
-                echo -e "$BORDER"
-                echo -e " ${B_CYAN}>> Server Status${NC}"
-                
-                server_ip=$(curl -s https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
-                dom=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
-                tz=$(timedatectl 2>/dev/null | grep "Time zone" | awk '{print $3}' || echo "UTC")
-                if crontab -l 2>/dev/null | grep -q "reboot"; then
-                    reboot_status="[ACTIVE]"
-                else
-                    reboot_status="[INACTIVE]"
-                fi
-
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "IP Address" "$server_ip"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Domain" "$dom"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Timezone" "$tz"
-                printf " ${B_GREEN}- %-28s : %b${NC}
-" "Auto-Reboot" "$reboot_status"
-                echo -e "$BORDER"
-                echo -ne " ${B_WHITE}Press any key to return...${NC}"; read -n 1 -s -r
-                ;;
-        3|03) menu-hysteria
-                ;;
-                    
-                    14|14)
-                clear; menu-running;;
-        8|08) clear; menu-vmess ;;
-        9|09) clear; menu-vless ;;
+        1)
+            ssh_submenu
+            ;;
+        2)
+            clear
+            echo "Xray management placeholder..."
+            read -n 1 -s -r -p "Press any key to continue..."
+            ;;
+        3)
+            clear
+            systemctl restart ssh 2>/dev/null || systemctl restart sshd
+            echo "Services restarted."
+            read -n 1 -s -r -p "Press any key to continue..."
+            ;;
+        4)
+            clear
+            systemctl status ssh --no-pager 2>/dev/null
+            read -n 1 -s -r -p "Press any key to continue..."
+            ;;
+        0)
+            exit 0
+            ;;
+        *)
+            echo -e "\E[1;31m[!] Invalid option.\E[0m"
+            sleep 1
+            ;;
     esac
 done
-
-get_license_display() {
-    local server_ip=$(curl -sS ipv4.icanhazip.com 2>/dev/null || hostname -I | awk '{print $1}')
-    local license_data=$(curl -s "$authorized_url")
-    local matched_line=$(echo "$license_data" | grep "^$server_ip:")
-
-    if [ -z "$matched_line" ]; then
-        echo "Unlicensed"
-        return
-    fi
-
-    local exp_date=$(echo "$matched_line" | cut -d':' -f2)
-    local current_epoch=$(date +%b)
-    local exp_epoch=$(date -d "$exp_date" +%b 2>/dev/null || date -jf "%Y-%m-%d" "$exp_date" +%b 2>/dev/null)
-
-    if [ -z "$exp_epoch" ]; then
-        echo "Active"
-        return
-    fi
-
-    local diff=$((exp_epoch - current_epoch))
-    local days=$((diff / 86400))
-
-    if [ $days -lt 0 ]; then
-        echo "Expired"
-    else
-        echo "$days Days Left ($exp_date)"
-    fi
-}

@@ -19,7 +19,6 @@ settings_submenu() {
         echo -e " ${B_WHITE}[11]${NC} ${B_CYAN}•${NC} ${B_GREEN}Pull Updates from Vault (OTA)${NC}"
         echo -e " ${B_WHITE}[12]${NC} ${B_CYAN}•${NC} ${B_GREEN}Toggle OpenVPN (ON/OFF) (RAM Saver)${NC}"
         echo -e "$BORDER"
-    echo -e " ${B_WHITE}[14]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Active SSH Users Monitor${NC}"
         echo -e " ${B_WHITE}[00]${NC} ${B_CYAN}•${NC} ${B_GREEN}Back to Main Menu${NC}"
         echo -e "$BORDER"
         echo -ne " ${B_GREEN}Select menu : ${NC}"
@@ -37,10 +36,6 @@ settings_submenu() {
             10|10) clear; echo -e "SlowDNS Key Manager..."; read -n 1 -s -r -p "Press any key..." ;;
             11|11) clear; echo -e "Pulling updates..."; read -n 1 -s -r -p "Press any key..." ;;
             12|12) clear; echo -e "Toggle OpenVPN..."; read -n 1 -s -r -p "Press any key..." ;;
-        14|014)
-            clear
-            menu-ssh-active
-            ;;
             0|00) break ;;
             *) clear; echo -e "[!] Invalid option."; sleep 1 ;;
         esac
@@ -167,10 +162,9 @@ ssh_submenu() {
         echo -e " ${B_WHITE}[11]${NC} ${B_CYAN}•${NC} ${B_GREEN}User Restore${NC}"
         echo -e " ${B_WHITE}[12]${NC} ${B_CYAN}•${NC} ${B_GREEN}Show OpenVPN Config${NC}"
         echo -e " ${B_WHITE}[13]${NC} ${B_CYAN}•${NC} ${B_GREEN}Modify SSH Login Limit${NC}"
-    echo -e " ${B_WHITE}[14]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Active SSH Users Monitor${NC}"
         echo -e " ${B_WHITE}[00]${NC} ${B_CYAN}•${NC} ${B_GREEN}Back to Main Menu${NC}"
         echo -e "$BORDER"
-        echo -ne " ${B_CYAN}Select an option [0-14]: ${NC}"
+        echo -ne " ${B_CYAN}Select an option [0-13]: ${NC}"
         read sub_choix
         case $sub_choix in
         1|01) clear; usernew 2>/dev/null || echo -e "\n[!] Command 'usernew' missing."; read -n 1 -s -r ;;
@@ -183,10 +177,6 @@ ssh_submenu() {
         11) clear; restore 2>/dev/null || echo -e "\n[!] Command 'restore' missing."; read -n 1 -s -r ;;
         12) clear; menu-ovpn 2>/dev/null || ovpn 2>/dev/null || echo -e "\n[!] Command 'ovpn' missing."; read -n 1 -s -r ;;
         13) clear; limit 2>/dev/null || limit-ssh 2>/dev/null || echo -e "\n[!] Command 'limit' missing."; read -n 1 -s -r ;;
-        14|014)
-            clear
-            menu-ssh-active
-            ;;
         0|00) clear; menu ;;
         *) clear; echo -e "\n[!] Invalid option."; sleep 1; menu ;;
     esac
@@ -209,7 +199,6 @@ vmess_submenu() {
         echo -e " ${B_WHITE}[07]${NC} ${B_CYAN}•${NC} ${B_GREEN}List VMess Members${NC}"
         echo -e " ${B_WHITE}[08]${NC} ${B_CYAN}•${NC} ${B_GREEN}Clean Expired Users (Manual)${NC}"
         echo -e "$BORDER"
-    echo -e " ${B_WHITE}[14]${NC} ${B_MAGENTA}•${NC} ${B_WHITE}Active SSH Users Monitor${NC}"
         echo -e " ${B_WHITE}[00]${NC} ${B_CYAN}•${NC} ${B_GREEN}Back to Main Menu${NC}"
         echo -e "$BORDER"
         echo -ne " ${B_GREEN}Select menu : ${NC}"
@@ -332,7 +321,7 @@ vmess_submenu() {
                 ;;
                         
                     14|14)
-                clear; menu-running;;
+                clear; menu-status;;
     esac
     done
 }
@@ -591,7 +580,7 @@ echo -e "\e[1;37m"
                 ;;
                     
                     14|14)
-                clear; menu-running;;
+                clear; menu-status;;
         8|08) clear; menu-vmess ;;
         9|09) clear; menu-vless ;;
     esac

@@ -1,5 +1,5 @@
 #!/bin/bash
-# install.sh - Master VPN Installer (GitHub Public Direct)
+# install.sh - Master VPN Installer with Safety Checks & Domain Setup
 
 if [ "${EUID}" -ne 0 ]; then
     echo "[!] This script must be run as root."
@@ -45,7 +45,7 @@ echo "[2/6] Configuring SSH-WS Bridge..."
 download_file "$REPO_URL/core/ssh-ws.py" "/usr/local/bin/ssh-ws.py"
 chmod +x /usr/local/bin/ssh-ws.py
 
-cat << 'EOF_SERVICE' > /etc/systemd/system/ssh-ws.service
+cat <<EOF > /etc/systemd/system/ssh-ws.service
 [Unit]
 Description=SSH WebSocket Proxy Server
 After=network.target
@@ -59,7 +59,7 @@ RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
-EOF_SERVICE
+EOF
 
 systemctl daemon-reload
 systemctl enable ssh-ws
@@ -107,8 +107,9 @@ echo "=================================================="
 echo "          INSTALLATION COMPLETE!                  "
 echo "=================================================="
 echo " Subdomain  : $DOMAIN"
-echo " Nameserver : `NS_DOMAIN`"
+echo " Nameserver : $NS_DOMAIN"
 echo "=================================================="
 echo " All services are configured and running."
 echo " Type 'menu' in your terminal to start."
 echo "=================================================="
+

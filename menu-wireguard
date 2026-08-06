@@ -1,0 +1,203 @@
+#!/bin/bash
+mkdir -p /etc/wireguard
+touch /etc/wireguard/wg-users.db
+
+GREEN='\e[32m'
+NC='\e[0m'
+
+while true; do
+    clear
+    echo "                      WIREGUARD                       "
+    echo "------------------------------------------------------"
+    echo "1. Create Account Wireguard"
+    echo "2. Delete Account Wireguard"
+    echo "3. Extending Account Wireguard Active Life"
+    echo "4. Check User Login Wireguard"
+    echo "5. Menu"
+    echo "6. Exit"
+    echo "------------------------------------------------------"
+    read -p "Select From Options [ 1 - 6 ] : " opt
+
+    case $opt in
+        1|01)
+            clear
+            echo -ne "${GREEN}Username : ${NC}"
+            read user
+            if [ -z "$user" ]; then echo "Username cannot be empty!"; sleep 2; continue; fi
+            
+            echo -e "${GREEN}IPv4 Detected${NC}"
+            echo -ne "${GREEN}Expired (Days) : ${NC}"
+            read masaaktif
+            if [ -z "$masaaktif" ]; then masaaktif=30; fi
+            
+            IP=$(curl -sS ipv4.icanhazip.com 2>/dev/null || echo "127.0.0.1")
+            DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "$IP")
+            created_date=$(date +"%Y-%m-%d")
+            exp_date=$(date -d "+${masaaktif} days" +"%Y-%m-%d" 2>/dev/null || date -v+${masaaktif}d +"%Y-%m-%d")
+            
+            echo "$user $exp_date" >> /etc/wireguard/wg-users.db
+            
+            # --- LIVE CRYPTO GENERATION ---
+            CLIENT_PRIV=$(wg genkey)
+            CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+            SERVER_PUB=$(cat /etc/wireguard/server_public.key)
+            
+            # Find next available internal IP
+            LAST_IP=$(grep -oP '10\.66\.66\.\K[0-9]+' /etc/wireguard/wg0.conf | tail -n 1)
+            if [ -z "$LAST_IP" ]; then LAST_IP=1; fi
+            CLIENT_IP="10.66.66.$((LAST_IP + 1))"
+            
+            # Inject into live kernel and config
+            wg set wg0 peer "$CLIENT_PUB" allowed-ips "${CLIENT_IP}/32"
+            cat << EOT >> /etc/wireguard/wg0.conf
+
+[Peer]
+# $user - $exp_date
+PublicKey = $CLIENT_PUB
+AllowedIPs = ${CLIENT_IP}/32
+EOT
+
+            # Write the downloadable config file
+            cat << EOT > /var/www/wireguard/${user}.conf
+[Interface]
+PrivateKey = $CLIENT_PRIV
+Address = ${CLIENT_IP}/24
+DNS = 8.8.8.8, 8.8.4.4
+
+[Peer]
+PublicKey = $SERVER_PUB
+Endpoint = ${IP}:7070
+AllowedIPs = 0.0.0.0/0, ::/0
+PersistentKeepalive = 25
+EOT
+            # ------------------------------
+            
+            clear
+            echo -e "${GREEN}=======-WIREGUARD-=======${NC}"
+            echo -e "${GREEN}Remarks   : ${user}${NC}"
+            echo -e "${GREEN}IP/Host   : ${IP}${NC}"
+            echo -e "${GREEN}Domain    : ${DOMAIN}${NC}"
+            echo -e "${GREEN}Port      : 7070${NC}"
+            echo -e "${GREEN}Created   : ${created_date}${NC}"
+            echo -e "${GREEN}Expired   : ${exp_date}${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo -e "${GREEN}Link WG   : http://${IP}:89/${user}.conf${NC}"
+            echo -e "${GREEN}=========================${NC}"
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        2|02)
+            clear
+            echo -e "${GREEN}Select the existing client you want to remove${NC}"
+            echo -e "${GREEN}Press CTRL+C to return${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            echo -e "${GREEN}     No  Expired   User${NC}"
+            
+            if [ ! -s /etc/wireguard/wg-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            users=()
+            exps=()
+            i=1
+            while read -r u e; do
+                users[$i]=$u
+                exps[$i]=$e
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/wireguard/wg-users.db
+            
+            total=${#users[@]}
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                grep -v "^$target_user " /etc/wireguard/wg-users.db > /etc/wireguard/wg-users.tmp
+                mv /etc/wireguard/wg-users.tmp /etc/wireguard/wg-users.db
+                
+                # --- LIVE KERNEL REMOVAL ---
+                PUBKEY=$(awk -v usr="# $target_user -" '$0 ~ usr {getline; print $3}' /etc/wireguard/wg0.conf)
+                if [ -n "$PUBKEY" ]; then
+                    wg set wg0 peer "$PUBKEY" remove 2>/dev/null
+                    sed -i "/# $target_user -/,+3d" /etc/wireguard/wg0.conf
+                fi
+                rm -f /var/www/wireguard/${target_user}.conf
+                # ---------------------------
+                
+                echo -e "\n${GREEN}[+] Client $target_user successfully removed.${NC}"
+            else
+                echo -e "\n${GREEN}[!] Invalid selection or aborted.${NC}"
+            fi
+            sleep 2
+            ;;
+        3|03)
+            clear
+            echo -e "${GREEN}Select the existing client you want to extend${NC}"
+            echo -e "${GREEN}Press CTRL+C to return${NC}"
+            echo -e "${GREEN}===============================${NC}"
+            echo -e "${GREEN}     No  Expired   User${NC}"
+            
+            if [ ! -s /etc/wireguard/wg-users.db ]; then
+                echo -e "${GREEN}     No users found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            users=()
+            exps=()
+            i=1
+            while read -r u e; do
+                users[$i]=$u
+                exps[$i]=$e
+                echo -e "${GREEN}     ${i}) ${u} ${e}${NC}"
+                ((i++))
+            done < /etc/wireguard/wg-users.db
+            
+            total=${#users[@]}
+            echo -ne "${GREEN}Select one client [1-$total]: ${NC}"
+            read client_num
+
+            if [[ "$client_num" =~ ^[0-9]+$ ]] && [ "$client_num" -ge 1 ] && [ "$client_num" -le "$total" ]; then
+                target_user="${users[$client_num]}"
+                echo -ne "${GREEN}Add Days: ${NC}"
+                read add_days
+                if [[ "$add_days" =~ ^[0-9]+$ ]]; then
+                    temp_file=$(mktemp)
+                    while read -r u e; do
+                        if [ "$u" == "$target_user" ]; then
+                            new_exp=$(date -d "$e + $add_days days" +"%Y-%m-%d" 2>/dev/null)
+                            echo "$u $new_exp" >> "$temp_file"
+                            echo -e "\n${GREEN}[+] Extended $target_user to $new_exp.${NC}"
+                            # Update label in wg0.conf
+                            sed -i "s/# $target_user - $e/# $target_user - $new_exp/" /etc/wireguard/wg0.conf
+                        else
+                            echo "$u $e" >> "$temp_file"
+                        fi
+                    done < /etc/wireguard/wg-users.db
+                    mv "$temp_file" /etc/wireguard/wg-users.db
+                else
+                    echo -e "\n${GREEN}[!] Invalid number of days.${NC}"
+                fi
+            else
+                echo -e "\n${GREEN}[!] Invalid selection or aborted.${NC}"
+            fi
+            sleep 2
+            ;;
+        4|04)
+            clear
+            echo "--- CHECK USER LOGIN ---"
+            if command -v wg &> /dev/null; then
+                wg show
+            else
+                echo "Wireguard command not found."
+            fi
+            echo ""
+            read -p "Press any key to return..." -n 1 -s
+            ;;
+        5|05) break ;;
+        6|06) exit 0 ;;
+    esac
+done

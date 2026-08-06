@@ -40,12 +40,15 @@ def handle_client(client_socket):
     try:
         request = client_socket.recv(BUFFER_SIZE)
         
+        # Check if request is a WebSocket upgrade request
         if b"Upgrade: websocket" in request or b"HTTP/" in request:
             client_socket.sendall(RESPONSE_200)
 
+        # Connect to OpenSSH daemon
         ssh_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ssh_socket.connect((SSH_HOST, SSH_PORT))
 
+        # Start bidirectional piping
         t1 = threading.Thread(target=pipe_sockets, args=(client_socket, ssh_socket), daemon=True)
         t2 = threading.Thread(target=pipe_sockets, args=(ssh_socket, client_socket), daemon=True)
         t1.start()
